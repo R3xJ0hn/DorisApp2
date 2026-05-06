@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="DorisApp2.API/DorisApp2.API.csproj" />
+  <Project Path="DorisApp2.PosDesktop/DorisApp2.PosDesktop.csproj" Id="8b57362a-4c33-4997-aaab-48ec0dca5571" />
+  <Project Path="DorisApp2.Web/dorisapp2.web.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+</Solution>

@@ -1,0 +1,6 @@
+@DorisApp2.API_HostAddress = http://localhost:5082
+
+GET {{DorisApp2.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
