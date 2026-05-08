@@ -43,6 +43,10 @@ function AuthPage({ initialMode }: { initialMode: AuthMode }) {
   const content = authContent[mode]
 
   const setAuthMode = (nextMode: AuthMode) => {
+    if (isSubmitting) {
+      return
+    }
+
     setMode(nextMode)
     setError("")
     navigate(nextMode === "login" ? "/login" : "/register", { replace: true })
@@ -98,6 +102,7 @@ function AuthPage({ initialMode }: { initialMode: AuthMode }) {
             <Button
               type="button"
               variant={mode === "login" ? "default" : "ghost"}
+              disabled={isSubmitting}
               onClick={() => setAuthMode("login")}
             >
               Sign in
@@ -105,6 +110,7 @@ function AuthPage({ initialMode }: { initialMode: AuthMode }) {
             <Button
               type="button"
               variant={mode === "register" ? "default" : "ghost"}
+              disabled={isSubmitting}
               onClick={() => setAuthMode("register")}
             >
               Sign up
@@ -163,7 +169,8 @@ function AuthPage({ initialMode }: { initialMode: AuthMode }) {
                   content.showName ? "new-password" : "current-password"
                 }
                 disabled={isSubmitting}
-                minLength={mode === "register" ? 6 : undefined}
+                maxLength={72}
+                minLength={mode === "register" ? 8 : undefined}
                 required
               />
             </div>

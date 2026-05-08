@@ -1,12 +1,37 @@
+import { useEffect, useState } from "react"
 import { Navigate } from "react-router-dom"
 
 import { ShopNavbar } from "@/components/shop/shop-navbar"
-import { getStoredAuthUser, isAuthenticated } from "@/api/auth"
+import { getStoredAuthUser, loadCurrentUser, type StoredAuthUser } from "@/api/auth"
 
 function AccountPage() {
-  const user = getStoredAuthUser()
+  const [user, setUser] = useState<StoredAuthUser | null>(getStoredAuthUser())
+  const [isLoading, setIsLoading] = useState(!user)
 
-  if (!isAuthenticated()) {
+  useEffect(() => {
+    if (user) {
+      return
+    }
+
+    let isMounted = true
+
+    loadCurrentUser().then((currentUser) => {
+      if (isMounted) {
+        setUser(currentUser)
+        setIsLoading(false)
+      }
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [user])
+
+  if (isLoading) {
+    return null
+  }
+
+  if (!user) {
     return <Navigate to="/login" replace />
   }
 

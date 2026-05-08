@@ -4,6 +4,7 @@ using DorisApp2.API.Dtos;
 using DorisApp2.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -35,13 +36,21 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
         };
 
         context.Users.Add(user);
-        await context.SaveChangesAsync();
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateException exception) when (IsUniqueEmailConflict(exception))
+        {
+            return Conflict(new { message = "Email is already registered." });
+        }
 
         var token = GenerateJwtToken(user);
+        SetAuthCookie(token);
 
         return Ok(new AuthResponse
         {
-            Token = token,
             Email = user.Email,
             FullName = user.FullName,
             Role = user.Role
@@ -67,14 +76,21 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
         }
 
         var token = GenerateJwtToken(user);
+        SetAuthCookie(token);
 
         return Ok(new AuthResponse
         {
-            Token = token,
             Email = user.Email,
             FullName = user.FullName,
             Role = user.Role
         });
+    }
+
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        Response.Cookies.Delete("access_token", GetCookieOptions());
+        return NoContent();
     }
 
     private string GenerateJwtToken(User user)
@@ -104,5 +120,35 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private void SetAuthCookie(string token)
+    {
+        Response.Cookies.Append("access_token", token, GetCookieOptions());
+    }
+
+    private static CookieOptions GetCookieOptions()
+    {
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = DateTimeOffset.UtcNow.AddMinutes(60)
+        };
+    }
+
+    private static bool IsUniqueEmailConflict(DbUpdateException exception)
+    {
+        for (var current = exception.InnerException; current is not null; current = current.InnerException)
+        {
+            if (current is SqlException sqlException &&
+                sqlException.Errors.Cast<SqlError>().Any(error => error.Number is 2601 or 2627))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -4,7 +4,7 @@ import { Heart, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
-import { isAuthenticated, logout } from "@/api/auth";
+import { isAuthenticated, loadCurrentUser, logout } from "@/api/auth";
 import { cn } from "@/lib/utils";
 import {
   shopAccountItems,
@@ -81,9 +81,11 @@ function ShopNavbar() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [userIsAuthenticated, setUserIsAuthenticated] = useState(
+    isAuthenticated(),
+  );
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const cartItemCount = 0;
-  const userIsAuthenticated = isAuthenticated();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((open) => !open);
@@ -98,12 +100,27 @@ function ShopNavbar() {
     setAccountMenuOpen((open) => !open);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    setUserIsAuthenticated(false);
     setAccountMenuOpen(false);
     setMobileMenuOpen(false);
     navigate("/login", { replace: true });
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    loadCurrentUser().then((user) => {
+      if (isMounted) {
+        setUserIsAuthenticated(Boolean(user));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!accountMenuOpen) {

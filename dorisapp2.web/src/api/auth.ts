@@ -3,13 +3,12 @@ import { AxiosError } from "axios"
 import api from "@/api/axios"
 
 type AuthResponse = {
-  token: string
   email: string
   fullName: string
   role: string
 }
 
-type StoredAuthUser = Omit<AuthResponse, "token">
+type StoredAuthUser = AuthResponse
 
 type LoginRequest = {
   email: string
@@ -26,7 +25,8 @@ type ApiErrorBody = {
   errors?: Record<string, string[]>
 }
 
-const authStorageKey = "authUser"
+let authUser: StoredAuthUser | null = null
+let profileRequest: Promise<StoredAuthUser | null> | null = null
 
 async function login(payload: LoginRequest) {
   const { data } = await api.post<AuthResponse>("/Auth/login", payload)
@@ -40,43 +40,65 @@ async function register(payload: RegisterRequest) {
   return data
 }
 
-function persistAuth(auth: AuthResponse) {
-  localStorage.setItem("token", auth.token)
-  localStorage.setItem(
-    authStorageKey,
-    JSON.stringify({
-      email: auth.email,
-      fullName: auth.fullName,
-      role: auth.role,
+async function logout() {
+  clearAuthState()
+
+  try {
+    await api.post("/Auth/logout")
+  } catch {
+    // Local auth state is already cleared; logout should not be blocked by an expired cookie.
+  }
+}
+
+async function loadCurrentUser() {
+  if (authUser) {
+    return authUser
+  }
+
+  profileRequest ??= api
+    .get<StoredAuthUser>("/Profile/me")
+    .then(({ data }) => {
+      authUser = {
+        email: data.email,
+        fullName: data.fullName,
+        role: data.role,
+      }
+
+      return authUser
     })
-  )
+    .catch(() => {
+      clearAuthState()
+      return null
+    })
+    .finally(() => {
+      profileRequest = null
+    })
+
+  return profileRequest
+}
+
+function persistAuth(auth: AuthResponse) {
+  authUser = {
+    email: auth.email,
+    fullName: auth.fullName,
+    role: auth.role,
+  }
+}
+
+function clearAuthState() {
+  authUser = null
 }
 
 function getStoredAuthUser() {
-  const authUser = localStorage.getItem(authStorageKey)
-
-  if (!authUser) {
-    return null
-  }
-
-  try {
-    return JSON.parse(authUser) as StoredAuthUser
-  } catch {
-    return null
-  }
+  return authUser
 }
 
 function isAuthenticated() {
-  return Boolean(localStorage.getItem("token"))
+  return Boolean(authUser)
 }
 
 function isAdmin() {
-  return getStoredAuthUser()?.role.toLowerCase() === "admin"
-}
-
-function logout() {
-  localStorage.removeItem("token")
-  localStorage.removeItem(authStorageKey)
+  return authUser?.role.toLowerCase() === "admin"
 }
 
 function getAuthErrorMessage(error: unknown) {
@@ -104,10 +126,12 @@ function getAuthErrorMessage(error: unknown) {
 }
 
 export {
+  clearAuthState,
   getAuthErrorMessage,
   getStoredAuthUser,
   isAdmin,
   isAuthenticated,
+  loadCurrentUser,
   login,
   logout,
   register,
