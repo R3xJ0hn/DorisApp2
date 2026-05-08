@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react"
 
-import { AdminSidebar } from "@/components/admin-sidebar"
+import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { Button } from "@/components/ui/button"
 import {
   SidebarInset,
