@@ -7,6 +7,10 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<ShopHomepage />} />
+      <Route path="/categories" element={<ShopHomepage />} />
+      <Route path="/new-arrivals" element={<ShopHomepage />} />
+      <Route path="/sale" element={<ShopHomepage />} />
+      <Route path="/about" element={<ShopHomepage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/admin/*" element={<AdminPortal />} />

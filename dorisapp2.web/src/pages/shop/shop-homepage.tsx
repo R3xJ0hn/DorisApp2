@@ -9,28 +9,28 @@ import {
   Truck,
 } from 'lucide-react'
 
-function ShopHomepage() {
-  const products = [
-    {
-      name: "Daily Carry Tote",
-      category: "Bags",
-      price: "$68.00",
-      tone: "bg-rose-100 text-rose-900",
-    },
-    {
-      name: "Soft Knit Set",
-      category: "Apparel",
-      price: "$92.00",
-      tone: "bg-emerald-100 text-emerald-900",
-    },
-    {
-      name: "Ceramic Desk Cup",
-      category: "Home",
-      price: "$24.00",
-      tone: "bg-sky-100 text-sky-900",
-    },
-  ];
+const products = [
+  {
+    name: "Daily Carry Tote",
+    category: "Bags",
+    price: "$68.00",
+    tone: "bg-rose-100 text-rose-900",
+  },
+  {
+    name: "Soft Knit Set",
+    category: "Apparel",
+    price: "$92.00",
+    tone: "bg-emerald-100 text-emerald-900",
+  },
+  {
+    name: "Ceramic Desk Cup",
+    category: "Home",
+    price: "$24.00",
+    tone: "bg-sky-100 text-sky-900",
+  },
+];
 
+function ShopHomepage() {
   return (
     <main className="min-h-svh bg-background text-foreground">
       <ShopNavbar />

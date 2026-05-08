@@ -4,10 +4,10 @@ export const shopNavExploreLink = [
 
 export const shopNavItems = [
   { label: "Shop", href: "/" },
-  { label: "Categories", href: "/" },
-  { label: "New Arrivals", href: "/" },
-  { label: "Sale", href: "/" },
-  { label: "About", href: "/" },
+  { label: "Categories", href: "/categories" },
+  { label: "New Arrivals", href: "/new-arrivals" },
+  { label: "Sale", href: "/sale" },
+  { label: "About", href: "/about" },
 ];
 
 export const shopAccountItems = [

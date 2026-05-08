@@ -153,13 +153,13 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  --shop-background: #ffffff;
-  --shop-foreground: #0f172a;
+  --shop-background: #0b1220;
+  --shop-foreground: #f8fafc;
   --shop-primary: #ea580c;
   --shop-primary-foreground: #ffffff;
-  --shop-secondary: #fff7ed;
-  --shop-secondary-foreground: #c2410c;
-  --shop-muted: #f8fafc;
-  --shop-muted-foreground: #334155;
-  --shop-border: #e2e8f0;
+  --shop-secondary: #0f172a;
+  --shop-secondary-foreground: #fed7aa;
+  --shop-muted: #0f172a;
+  --shop-muted-foreground: #cbd5e1;
+  --shop-border: #1f2937;
 }

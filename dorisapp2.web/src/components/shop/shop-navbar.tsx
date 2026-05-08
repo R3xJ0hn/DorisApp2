@@ -44,7 +44,24 @@ function IconButton({
   className?: string;
   to?: string;
 }) {
-  const button = (
+  if (to) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className={cn(
+          "text-(--shop-muted-foreground) hover:bg-(--shop-secondary) hover:text-(--shop-secondary-foreground)",
+          className,
+        )}
+        aria-label={label}
+        render={<Link to={to} />}
+      >
+        {children}
+      </Button>
+    );
+  }
+
+  return (
     <Button
       variant="ghost"
       size="icon-sm"
@@ -57,18 +74,11 @@ function IconButton({
       {children}
     </Button>
   );
-
-  if (to) {
-    return <Link to={to}>{button}</Link>;
-  }
-
-  return (
-    button
-  );
 }
 
 function ShopNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const cartItemCount = 0;
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((open) => !open);
@@ -134,7 +144,7 @@ function ShopNavbar() {
           <NavLinks
             items={shopNavItems}
             className={cn(
-              "hidden flex-1 items-center justify-start gap-5 text-sm font-small lg:flex",
+              "hidden flex-1 items-center justify-start gap-5 text-sm font-normal lg:flex",
               "text-(--shop-muted-foreground)",
             )}
           />
@@ -161,14 +171,16 @@ function ShopNavbar() {
 
             <IconButton label="Cart" className="relative">
               <ShoppingBag className="size-5" />
-              <span
-                className={cn(
-                  "absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full text-xs font-bold",
-                  "bg-(--shop-primary) text-(--shop-primary-foreground)",
-                )}
-              >
-                2
-              </span>
+              {cartItemCount > 0 && (
+                <span
+                  className={cn(
+                    "absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full text-xs font-bold",
+                    "bg-(--shop-primary) text-(--shop-primary-foreground)",
+                  )}
+                >
+                  {cartItemCount}
+                </span>
+              )}
             </IconButton>
 
             <IconButton label="Account" className="hidden lg:inline-flex" to="/login">

@@ -10,6 +10,7 @@ import {
   Store,
   Users,
 } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import {
   Sidebar,
@@ -50,7 +51,7 @@ function AdminSidebar() {
             <SidebarMenuButton
               size="lg"
               tooltip="Doris Admin"
-              render={<a href="/admin" />}
+              render={<Link to="/admin" />}
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Store className="size-4" />
@@ -76,7 +77,7 @@ function AdminSidebar() {
                   <SidebarMenuButton
                     isActive={item.active}
                     tooltip={item.title}
-                    render={<a href={item.href} />}
+                    render={<Link to={item.href} />}
                   >
                     <item.icon />
                     <span>{item.title}</span>
@@ -94,7 +95,7 @@ function AdminSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     tooltip={item.title}
-                    render={<a href={item.href} />}
+                    render={<Link to={item.href} />}
                   >
                     <item.icon />
                     <span>{item.title}</span>
