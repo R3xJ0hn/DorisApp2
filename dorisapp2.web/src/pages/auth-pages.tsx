@@ -10,6 +10,13 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  getAuthErrorMessage,
+  login,
+  register,
+  type LoginRequest,
+  type RegisterRequest,
+} from "@/api/auth"
 
 type AuthMode = "login" | "register"
 
@@ -31,11 +38,41 @@ const authContent = {
 function AuthPage({ initialMode }: { initialMode: AuthMode }) {
   const navigate = useNavigate()
   const [mode, setMode] = useState<AuthMode>(initialMode)
+  const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const content = authContent[mode]
 
   const setAuthMode = (nextMode: AuthMode) => {
     setMode(nextMode)
+    setError("")
     navigate(nextMode === "login" ? "/login" : "/register", { replace: true })
+  }
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError("")
+    setIsSubmitting(true)
+
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get("email") ?? "").trim()
+    const password = String(formData.get("password") ?? "")
+
+    try {
+      const auth =
+        mode === "login"
+          ? await login({ email, password } satisfies LoginRequest)
+          : await register({
+              fullName: String(formData.get("name") ?? "").trim(),
+              email,
+              password,
+            } satisfies RegisterRequest)
+
+      navigate(auth.role === "Admin" ? "/admin" : "/", { replace: true })
+    } catch (authError) {
+      setError(getAuthErrorMessage(authError))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -83,13 +120,19 @@ function AuthPage({ initialMode }: { initialMode: AuthMode }) {
             </p>
           </div>
 
-          <form className="mt-8 space-y-4">
+          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
             {content.showName && (
               <div className="space-y-2">
                 <label className="text-sm font-medium" htmlFor="name">
                   Full name
                 </label>
-                <Input id="name" name="name" autoComplete="name" />
+                <Input
+                  id="name"
+                  name="name"
+                  autoComplete="name"
+                  disabled={isSubmitting}
+                  required
+                />
               </div>
             )}
 
@@ -103,6 +146,8 @@ function AuthPage({ initialMode }: { initialMode: AuthMode }) {
                 type="email"
                 autoComplete="email"
                 placeholder="you@example.com"
+                disabled={isSubmitting}
+                required
               />
             </div>
 
@@ -117,11 +162,25 @@ function AuthPage({ initialMode }: { initialMode: AuthMode }) {
                 autoComplete={
                   content.showName ? "new-password" : "current-password"
                 }
+                disabled={isSubmitting}
+                minLength={mode === "register" ? 6 : undefined}
+                required
               />
             </div>
 
-            <Button className="w-full" size="lg" type="submit">
-              {content.submitLabel}
+            {error && (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
+
+            <Button
+              className="w-full"
+              size="lg"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Please wait..." : content.submitLabel}
             </Button>
           </form>
         </div>
