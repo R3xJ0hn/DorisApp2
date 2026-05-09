@@ -13,5 +13,4 @@ export const shopNavItems = [
 export const shopAccountItems = [
   { label: "Wishlist", href: "/" },
   { label: "My Account", href: "/login" },
-  { label: "Create Account", href: "/register" },
 ];

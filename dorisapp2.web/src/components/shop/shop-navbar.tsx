@@ -144,7 +144,7 @@ function ShopNavbar() {
     <>
       <div
         className={cn(
-          "hidden px-4 py-2 text-center text-sm md:block",
+          "hidden px-4 py-2 text-center text-sm md:block z-50",
           "bg-(--shop-primary) text-(--shop-primary-foreground)",
         )}
       >
@@ -287,7 +287,7 @@ function ShopNavbar() {
             <NavLinks
               items={shopNavItems}
               className={cn(
-                "flex flex-col gap-9 text-xl font-medium",
+                "flex flex-col gap-3 text-md font-medium",
                 "text-(--shop-muted-foreground)",
               )}
             />
@@ -296,7 +296,7 @@ function ShopNavbar() {
               {userIsAuthenticated ? (
                 <nav
                   className={cn(
-                    "flex flex-col gap-9 text-xl font-medium",
+                    "flex flex-col gap-3 text-md font-medium",
                     "text-(--shop-muted-foreground)",
                   )}
                 >
@@ -315,7 +315,7 @@ function ShopNavbar() {
                 <NavLinks
                   items={shopAccountItems}
                   className={cn(
-                    "flex flex-col gap-9 text-xl font-medium",
+                    "flex flex-col gap-5 text-md font-medium",
                     "text-(--shop-muted-foreground)",
                   )}
                 />
