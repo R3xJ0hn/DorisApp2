@@ -1,6 +1,7 @@
 import type { IconName } from "lucide-react/dynamic"
 
 type ShopSubcategory = {
+  id: string
   name: string
   slug: string
   productCount: number

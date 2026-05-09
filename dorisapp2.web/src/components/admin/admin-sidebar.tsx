@@ -14,6 +14,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { logout } from "@/api/auth"
+import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
@@ -122,14 +123,15 @@ function AdminSidebar() {
       </SidebarContent>
       <SidebarSeparator />
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Logout" onClick={handleLogout}>
-              <LogOut />
-              <span>Logout</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <Button
+          type="button"
+          className="w-full justify-center bg-black text-white hover:bg-black/85 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:px-0"
+          aria-label="Logout"
+          onClick={handleLogout}
+        >
+          <LogOut />
+          <span className="group-data-[collapsible=icon]:hidden">Logout</span>
+        </Button>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

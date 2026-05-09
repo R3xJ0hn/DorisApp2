@@ -20,12 +20,23 @@ const initialCategories: ShopCategory[] = [
     iconName: "apple",
     subcategories: [
       {
+        id: "organic-vegetables",
         name: "Organic vegetables",
         slug: "organic-vegetables",
         productCount: 94,
       },
-      { name: "Seasonal fruit", slug: "seasonal-fruit", productCount: 118 },
-      { name: "Fresh herbs", slug: "fresh-herbs", productCount: 36 },
+      {
+        id: "seasonal-fruit",
+        name: "Seasonal fruit",
+        slug: "seasonal-fruit",
+        productCount: 118,
+      },
+      {
+        id: "fresh-herbs",
+        name: "Fresh herbs",
+        slug: "fresh-herbs",
+        productCount: 36,
+      },
     ],
   },
   {
@@ -37,9 +48,14 @@ const initialCategories: ShopCategory[] = [
     isActive: true,
     iconName: "beef",
     subcategories: [
-      { name: "Butcher cuts", slug: "butcher-cuts", productCount: 58 },
-      { name: "Fresh fish", slug: "fresh-fish", productCount: 42 },
-      { name: "Marinated picks", slug: "marinated-picks", productCount: 26 },
+      { id: "butcher-cuts", name: "Butcher cuts", slug: "butcher-cuts", productCount: 58 },
+      { id: "fresh-fish", name: "Fresh fish", slug: "fresh-fish", productCount: 42 },
+      {
+        id: "marinated-picks",
+        name: "Marinated picks",
+        slug: "marinated-picks",
+        productCount: 26,
+      },
     ],
   },
   {
@@ -51,9 +67,19 @@ const initialCategories: ShopCategory[] = [
     isActive: true,
     iconName: "milk",
     subcategories: [
-      { name: "Milk & cream", slug: "milk-and-cream", productCount: 31 },
-      { name: "Cheese counter", slug: "cheese-counter", productCount: 34 },
-      { name: "Free-range eggs", slug: "free-range-eggs", productCount: 19 },
+      { id: "milk-and-cream", name: "Milk & cream", slug: "milk-and-cream", productCount: 31 },
+      {
+        id: "cheese-counter",
+        name: "Cheese counter",
+        slug: "cheese-counter",
+        productCount: 34,
+      },
+      {
+        id: "free-range-eggs",
+        name: "Free-range eggs",
+        slug: "free-range-eggs",
+        productCount: 19,
+      },
     ],
   },
   {
@@ -66,13 +92,14 @@ const initialCategories: ShopCategory[] = [
     isActive: false,
     iconName: "wheat",
     subcategories: [
-      { name: "Artisan bread", slug: "artisan-bread", productCount: 28 },
+      { id: "artisan-bread", name: "Artisan bread", slug: "artisan-bread", productCount: 28 },
       {
+        id: "breakfast-pastries",
         name: "Breakfast pastries",
         slug: "breakfast-pastries",
         productCount: 24,
       },
-      { name: "Gluten-free", slug: "gluten-free", productCount: 15 },
+      { id: "gluten-free", name: "Gluten-free", slug: "gluten-free", productCount: 15 },
     ],
   },
   {
@@ -84,9 +111,14 @@ const initialCategories: ShopCategory[] = [
     isActive: true,
     iconName: "cup-soda",
     subcategories: [
-      { name: "Juices", slug: "juices", productCount: 44 },
-      { name: "Coffee & tea", slug: "coffee-and-tea", productCount: 51 },
-      { name: "Sparkling drinks", slug: "sparkling-drinks", productCount: 44 },
+      { id: "juices", name: "Juices", slug: "juices", productCount: 44 },
+      { id: "coffee-and-tea", name: "Coffee & tea", slug: "coffee-and-tea", productCount: 51 },
+      {
+        id: "sparkling-drinks",
+        name: "Sparkling drinks",
+        slug: "sparkling-drinks",
+        productCount: 44,
+      },
     ],
   },
   {
@@ -98,9 +130,9 @@ const initialCategories: ShopCategory[] = [
     isActive: true,
     iconName: "baby",
     subcategories: [
-      { name: "Baby care", slug: "baby-care", productCount: 33 },
-      { name: "Cleaning", slug: "cleaning", productCount: 37 },
-      { name: "Paper goods", slug: "paper-goods", productCount: 22 },
+      { id: "baby-care", name: "Baby care", slug: "baby-care", productCount: 33 },
+      { id: "cleaning", name: "Cleaning", slug: "cleaning", productCount: 37 },
+      { id: "paper-goods", name: "Paper goods", slug: "paper-goods", productCount: 22 },
     ],
   },
 ];
@@ -228,8 +260,20 @@ function AdminCategoriesPage() {
 
   const handleAddSubcategory = () => {
     const trimmedName = newSubcategory.trim();
+    const nextSlug = toSlug(trimmedName);
 
-    if (!trimmedName) {
+    if (!trimmedName || !nextSlug) {
+      return;
+    }
+
+    const normalizedName = trimmedName.toLowerCase();
+    const hasDuplicate = selectedCategory.subcategories.some(
+      (subcategory) =>
+        subcategory.slug === nextSlug ||
+        subcategory.name.trim().toLowerCase() === normalizedName,
+    );
+
+    if (hasDuplicate) {
       return;
     }
 
@@ -241,8 +285,9 @@ function AdminCategoriesPage() {
               subcategories: [
                 ...category.subcategories,
                 {
+                  id: nextSlug,
                   name: trimmedName,
-                  slug: toSlug(trimmedName),
+                  slug: nextSlug,
                   productCount: 0,
                 },
               ],
@@ -253,14 +298,14 @@ function AdminCategoriesPage() {
     setNewSubcategory("");
   };
 
-  const handleRemoveSubcategory = (name: string) => {
+  const handleRemoveSubcategory = (id: string) => {
     setCategories((current) =>
       current.map((category) =>
         category.id === selectedCategory.id
           ? {
               ...category,
               subcategories: category.subcategories.filter(
-                (subcategory) => subcategory.name !== name,
+                (subcategory) => subcategory.id !== id,
               ),
             }
           : category,
@@ -546,7 +591,7 @@ function AdminCategoriesPage() {
                 <div className="mt-3 divide-y rounded-lg border">
                   {selectedCategory.subcategories.map((subcategory) => (
                     <div
-                      key={subcategory.slug}
+                      key={subcategory.id}
                       className="flex items-center justify-between gap-3 p-3 text-sm"
                     >
                       <span>
@@ -564,7 +609,7 @@ function AdminCategoriesPage() {
                         size="icon-sm"
                         aria-label={`Remove ${subcategory.name}`}
                         onClick={() =>
-                          handleRemoveSubcategory(subcategory.name)
+                          handleRemoveSubcategory(subcategory.id)
                         }
                       >
                         <Trash2 className="size-4" />
@@ -606,7 +651,7 @@ function AdminCategoriesPage() {
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {selectedCategory.subcategories.map((subcategory) => (
                     <div
-                      key={subcategory.slug}
+                      key={subcategory.id}
                       className="flex items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground"
                     >
                       <span className="min-w-0">
