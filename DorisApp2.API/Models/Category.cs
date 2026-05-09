@@ -27,5 +27,7 @@ namespace DorisApp2.API.Models
         public DateTime? UpdatedAt { get; set; }
 
         public ICollection<SubCategory> SubCategories { get; set; } = [];
+
+        public ICollection<Product> Products { get; set; } = [];
     }
 }
