@@ -5,7 +5,6 @@ import {
   BadgePercent,
   Heart,
   PackageCheck,
-  ShoppingBag,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -84,9 +83,11 @@ function AuthPage({ initialMode }: { initialMode: AuthMode }) {
       <section className="flex items-center justify-center px-4 py-10 md:px-6">
         <div className="w-full max-w-md">
           <Link to="/" className="mb-10 flex items-center gap-2 font-semibold">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-(--shop-primary) text-(--shop-primary-foreground)">
-              <ShoppingBag className="size-4" />
-            </span>
+            <img
+              src="/Logo.png"
+              alt=""
+              className="size-10 rounded-xl object-contain"
+            />
             Doris Shop
           </Link>
 

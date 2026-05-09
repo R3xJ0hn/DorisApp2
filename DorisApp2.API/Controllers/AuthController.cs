@@ -133,7 +133,7 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.None,
+            SameSite = SameSiteMode.Strict,
             Expires = DateTimeOffset.UtcNow.AddMinutes(GetJwtExpiresInMinutes())
         };
     }

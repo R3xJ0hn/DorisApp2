@@ -184,16 +184,13 @@ function ShopNavbar() {
 
           <Link
             to="/"
-            className="flex items-center gap-2 font-semibold uppercase text-xl mr-5"
+            className="mr-5 flex items-center gap-2 font-semibold uppercase text-xl"
           >
-            <span
-              className={cn(
-                "flex size-10 items-center justify-center rounded-xl",
-                "bg-(--shop-primary) text-(--shop-primary-foreground)",
-              )}
-            >
-              <ShoppingBag className="size-4 " />
-            </span>
+            <img
+              src="/Logo.png"
+              alt=""
+              className="size-10 rounded-xl object-contain"
+            />
             Doris Shop
           </Link>
 

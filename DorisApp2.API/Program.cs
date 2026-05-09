@@ -18,10 +18,9 @@ var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins")
     ?? throw new InvalidOperationException(
         "Cors:AllowedOrigins must be configured with at least one allowed origin.");
 
-corsAllowedOrigins = corsAllowedOrigins
+corsAllowedOrigins = [.. corsAllowedOrigins
     .Select(origin => origin.Trim())
-    .Where(origin => !string.IsNullOrWhiteSpace(origin))
-    .ToArray();
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))];
 
 if (corsAllowedOrigins.Length == 0)
 {

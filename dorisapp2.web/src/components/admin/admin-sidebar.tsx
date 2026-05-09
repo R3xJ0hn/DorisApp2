@@ -8,7 +8,6 @@ import {
   Package,
   Settings,
   ShoppingCart,
-  Store,
   Users,
 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
@@ -62,9 +61,11 @@ function AdminSidebar() {
               tooltip="Doris Admin"
               render={<Link to="/admin" />}
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Store className="size-4" />
-              </div>
+              <img
+                src="/Logo.png"
+                alt=""
+                className="aspect-square size-8 rounded-lg object-contain"
+              />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">Doris Admin</span>
                 <span className="truncate text-xs text-muted-foreground">
