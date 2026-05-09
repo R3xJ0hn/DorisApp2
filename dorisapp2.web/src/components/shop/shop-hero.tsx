@@ -1,59 +1,34 @@
 import { useEffect, useState } from 'react'
 import {
-  Apple,
-  Baby,
-  Beef,
   ChevronDown,
   ChevronRight,
-  CupSoda,
   Leaf,
-  Milk,
   PackageCheck,
-  Wheat,
 } from 'lucide-react'
+import { DynamicIcon } from 'lucide-react/dynamic'
+import type { IconName } from 'lucide-react/dynamic'
 import { Link } from 'react-router-dom'
 
+import { getCategories } from '@/api/categories'
+import type { ApiCategory } from '@/api/categories'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-const categories = [
-  {
-    name: 'Fresh Produce',
-    icon: Apple,
-    count: '248 items',
-    subcategories: ['Organic vegetables', 'Seasonal fruit', 'Fresh herbs'],
-  },
-  {
-    name: 'Meat & Seafood',
-    icon: Beef,
-    count: '126 items',
-    subcategories: ['Butcher cuts', 'Fresh fish', 'Marinated picks'],
-  },
-  {
-    name: 'Dairy & Eggs',
-    icon: Milk,
-    count: '84 items',
-    subcategories: ['Milk & cream', 'Cheese counter', 'Free-range eggs'],
-  },
-  {
-    name: 'Bakery',
-    icon: Wheat,
-    count: '67 items',
-    subcategories: ['Artisan bread', 'Breakfast pastries', 'Gluten-free'],
-  },
-  {
-    name: 'Beverages',
-    icon: CupSoda,
-    count: '139 items',
-    subcategories: ['Juices', 'Coffee & tea', 'Sparkling drinks'],
-  },
-  {
-    name: 'Baby & Household',
-    icon: Baby,
-    count: '92 items',
-    subcategories: ['Baby care', 'Cleaning', 'Paper goods'],
-  },
-]
+type HeroSubcategory = {
+  id: number
+  name: string
+  slug: string
+}
+
+type HeroCategory = {
+  id: number
+  name: string
+  slug: string
+  iconName: IconName
+  count: string
+  subcategories: HeroSubcategory[]
+}
 
 const grocerySlides = [
   {
@@ -93,8 +68,10 @@ const grocerySlides = [
 
 function ShopHero() {
   const [activeSlide, setActiveSlide] = useState(0)
+  const [categories, setCategories] = useState<HeroCategory[]>([])
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
   const [focusedCategory, setFocusedCategory] = useState<string | null>(null)
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false)
   const currentSlide = grocerySlides[activeSlide]
 
@@ -104,6 +81,33 @@ function ShopHero() {
     }, 4500)
 
     return () => window.clearInterval(intervalId)
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    getCategories()
+      .then((apiCategories) => {
+        if (!isMounted) {
+          return
+        }
+
+        setCategories(toHeroCategories(apiCategories))
+      })
+      .catch(() => {
+        if (isMounted) {
+          setCategories([])
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingCategories(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   return (
@@ -149,14 +153,37 @@ function ShopHero() {
             )}
           >
             <div className="space-y-1">
+              {isLoadingCategories && (
+                <div className="space-y-1" aria-label="Loading categories">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      className="flex items-center gap-3 rounded-xl px-3 py-2"
+                      key={index}
+                    >
+                      <Skeleton className="size-9 shrink-0 rounded-xl bg-slate-200" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Skeleton className="h-3.5 w-28 bg-slate-200" />
+                        <Skeleton className="h-3 w-16 bg-slate-200" />
+                      </div>
+                      <Skeleton className="size-4 shrink-0 bg-slate-200" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!isLoadingCategories && categories.length === 0 && (
+                <div className="px-3 py-8 text-center text-sm text-(--shop-muted-foreground)">
+                  No categories available.
+                </div>
+              )}
+
               {categories.map((category) => {
-                const Icon = category.icon
                 const isExpanded = expandedCategory === category.name
 
                 return (
                   <div
                     className="group/category relative"
-                    key={category.name}
+                    key={category.id}
                     onBlur={(event) => {
                       if (!event.currentTarget.contains(event.relatedTarget)) {
                         setFocusedCategory(null)
@@ -191,7 +218,10 @@ function ShopHero() {
                       }}
                     >
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#db8d48]/10 text-[#db8d48] transition-colors group-hover/category:bg-[#db8d48]/15">
-                        <Icon className="size-5" />
+                        <DynamicIcon
+                          name={category.iconName}
+                          className="size-5"
+                        />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold text-(--shop-foreground)">
@@ -220,11 +250,11 @@ function ShopHero() {
                       <div className="ml-12 space-y-1 pb-2">
                         {category.subcategories.map((subcategory) => (
                           <Link
-                            key={subcategory}
-                            to="/categories"
+                            key={subcategory.id}
+                            to={`/categories?category=${category.slug}&subcategory=${subcategory.slug}`}
                             className="block rounded-xl px-3 py-2 text-sm text-(--shop-muted-foreground) transition-colors hover:bg-[#db8d48]/10 hover:text-[#db8d48]"
                           >
-                            {subcategory}
+                            {subcategory.name}
                           </Link>
                         ))}
                       </div>
@@ -243,11 +273,11 @@ function ShopHero() {
                     </p>
                     {category.subcategories.map((subcategory) => (
                       <Link
-                        key={subcategory}
-                        to="/categories"
+                        key={subcategory.id}
+                        to={`/categories?category=${category.slug}&subcategory=${subcategory.slug}`}
                         className="block rounded-xl px-3 py-2 text-sm text-(--shop-muted-foreground) transition-colors hover:bg-[#db8d48]/10 hover:text-[#db8d48]"
                       >
-                        {subcategory}
+                        {subcategory.name}
                       </Link>
                     ))}
                   </div>
@@ -323,6 +353,33 @@ function ShopHero() {
       </div>
     </section>
   )
+}
+
+function toHeroCategories(categories: ApiCategory[]): HeroCategory[] {
+  return categories
+    .filter((category) => category.isActive)
+    .map((category) => {
+      const subcategories = (
+        category.subCategories ??
+        category.SubCategories ??
+        []
+      ).filter((subcategory) => subcategory.isActive)
+
+      return {
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+        iconName: (category.iconName || 'package-check') as IconName,
+        count: `${subcategories.length} ${
+          subcategories.length === 1 ? 'aisle' : 'aisles'
+        }`,
+        subcategories: subcategories.map((subcategory) => ({
+          id: subcategory.id,
+          name: subcategory.name,
+          slug: subcategory.slug,
+        })),
+      }
+    })
 }
 
 export { ShopHero }
