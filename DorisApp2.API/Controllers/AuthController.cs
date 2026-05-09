@@ -24,7 +24,7 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
 
         if (emailExists)
         {
-            return BadRequest(new { message = "Email is already registered." });
+            return Conflict(new { message = "Email is already registered." });
         }
 
         var user = new User
@@ -127,15 +127,20 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
         Response.Cookies.Append("access_token", token, GetCookieOptions());
     }
 
-    private static CookieOptions GetCookieOptions()
+    private CookieOptions GetCookieOptions()
     {
         return new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.None,
-            Expires = DateTimeOffset.UtcNow.AddMinutes(60)
+            Expires = DateTimeOffset.UtcNow.AddMinutes(GetJwtExpiresInMinutes())
         };
+    }
+
+    private int GetJwtExpiresInMinutes()
+    {
+        return int.Parse(config["Jwt:ExpiresInMinutes"]!);
     }
 
     private static bool IsUniqueEmailConflict(DbUpdateException exception)

@@ -45,15 +45,15 @@ function AccountPage() {
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <div>
               <dt className="font-medium text-muted-foreground">Name</dt>
-              <dd className="mt-1 text-base">{user?.fullName ?? "Account user"}</dd>
+              <dd className="mt-1 text-base">{user.fullName ?? "Account user"}</dd>
             </div>
             <div>
               <dt className="font-medium text-muted-foreground">Email</dt>
-              <dd className="mt-1 text-base">{user?.email ?? "Not available"}</dd>
+              <dd className="mt-1 text-base">{user.email ?? "Not available"}</dd>
             </div>
             <div>
               <dt className="font-medium text-muted-foreground">Role</dt>
-              <dd className="mt-1 text-base">{user?.role ?? "Customer"}</dd>
+              <dd className="mt-1 text-base">{user.role ?? "Customer"}</dd>
             </div>
           </dl>
         </div>

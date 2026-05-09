@@ -98,7 +98,7 @@ function isAuthenticated() {
 }
 
 function isAdmin() {
-  return authUser?.role.toLowerCase() === "admin"
+  return authUser?.role?.toLowerCase() === "admin"
 }
 
 function getAuthErrorMessage(error: unknown) {
