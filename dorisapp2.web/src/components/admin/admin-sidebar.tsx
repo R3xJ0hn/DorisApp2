@@ -4,14 +4,15 @@ import {
   ChartNoAxesColumnIncreasing,
   ClipboardList,
   Home,
+  LogOut,
   Package,
   Settings,
   ShoppingCart,
-  Store,
   Users,
 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
+import { logout } from "@/api/auth"
 import {
   Sidebar,
   SidebarContent,
@@ -43,6 +44,13 @@ const operationsNav = [
 ]
 
 function AdminSidebar() {
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate("/login", { replace: true })
+  }
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -53,9 +61,11 @@ function AdminSidebar() {
               tooltip="Doris Admin"
               render={<Link to="/admin" />}
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Store className="size-4" />
-              </div>
+              <img
+                src="/Logo.png"
+                alt=""
+                className="aspect-square size-8 rounded-lg object-contain"
+              />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">Doris Admin</span>
                 <span className="truncate text-xs text-muted-foreground">
@@ -110,16 +120,9 @@ function AdminSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Admin user">
-              <div className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                DA
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Admin User</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  admin@doris.app
-                </span>
-              </div>
+            <SidebarMenuButton tooltip="Logout" onClick={handleLogout}>
+              <LogOut />
+              <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

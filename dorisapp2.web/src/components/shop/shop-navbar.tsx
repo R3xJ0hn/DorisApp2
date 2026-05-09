@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Heart, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { isAuthenticated, loadCurrentUser, logout } from "@/api/auth";
 import { cn } from "@/lib/utils";
 import {
   shopAccountItems,
@@ -77,12 +78,67 @@ function IconButton({
 }
 
 function ShopNavbar() {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [userIsAuthenticated, setUserIsAuthenticated] = useState(
+    isAuthenticated(),
+  );
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const cartItemCount = 0;
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((open) => !open);
   };
+
+  const handleAccountClick = () => {
+    if (!userIsAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    setAccountMenuOpen((open) => !open);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setUserIsAuthenticated(false);
+    setAccountMenuOpen(false);
+    setMobileMenuOpen(false);
+    navigate("/login", { replace: true });
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    loadCurrentUser().then((user) => {
+      if (isMounted) {
+        setUserIsAuthenticated(Boolean(user));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!accountMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [accountMenuOpen]);
 
   return (
     <>
@@ -128,16 +184,13 @@ function ShopNavbar() {
 
           <Link
             to="/"
-            className="flex items-center gap-2 font-semibold uppercase text-xl mr-5"
+            className="mr-5 flex items-center gap-2 font-semibold uppercase text-xl"
           >
-            <span
-              className={cn(
-                "flex size-10 items-center justify-center rounded-xl",
-                "bg-(--shop-primary) text-(--shop-primary-foreground)",
-              )}
-            >
-              <ShoppingBag className="size-4 " />
-            </span>
+            <img
+              src="/Logo.png"
+              alt=""
+              className="size-10 rounded-xl object-contain"
+            />
             Doris Shop
           </Link>
 
@@ -183,9 +236,44 @@ function ShopNavbar() {
               )}
             </IconButton>
 
-            <IconButton label="Account" className="hidden lg:inline-flex" to="/login">
-              <User className="size-5" />
-            </IconButton>
+            <div className="relative hidden lg:block" ref={accountMenuRef}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="text-(--shop-muted-foreground) hover:bg-(--shop-secondary) hover:text-(--shop-secondary-foreground)"
+                aria-label="Account"
+                aria-expanded={accountMenuOpen}
+                aria-haspopup="menu"
+                onClick={handleAccountClick}
+              >
+                <User className="size-5" />
+              </Button>
+
+              {userIsAuthenticated && accountMenuOpen && (
+                <div
+                  className="absolute right-0 top-11 z-30 w-44 rounded-lg border border-(--shop-border) bg-(--shop-background) p-1 shadow-lg"
+                  role="menu"
+                >
+                  <Link
+                    to="/account"
+                    className="flex h-9 items-center rounded-md px-3 text-sm font-medium text-(--shop-foreground) hover:bg-(--shop-secondary)"
+                    role="menuitem"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    My Account
+                  </Link>
+                  <button
+                    type="button"
+                    className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-sm font-medium text-(--shop-foreground) hover:bg-(--shop-secondary)"
+                    role="menuitem"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="size-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -205,13 +293,33 @@ function ShopNavbar() {
             />
 
             <div className="mt-10 border-t border-(--shop-border) pt-9">
-              <NavLinks
-                items={shopAccountItems}
-                className={cn(
-                  "flex flex-col gap-9 text-xl font-medium",
-                  "text-(--shop-muted-foreground)",
-                )}
-              />
+              {userIsAuthenticated ? (
+                <nav
+                  className={cn(
+                    "flex flex-col gap-9 text-xl font-medium",
+                    "text-(--shop-muted-foreground)",
+                  )}
+                >
+                  <Link to="/account" onClick={() => setMobileMenuOpen(false)}>
+                    My Account
+                  </Link>
+                  <button
+                    type="button"
+                    className="text-left"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </nav>
+              ) : (
+                <NavLinks
+                  items={shopAccountItems}
+                  className={cn(
+                    "flex flex-col gap-9 text-xl font-medium",
+                    "text-(--shop-muted-foreground)",
+                  )}
+                />
+              )}
             </div>
           </div>
         )}
