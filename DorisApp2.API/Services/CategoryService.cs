@@ -41,7 +41,14 @@ namespace DorisApp2.API.Services
 
         public async Task<ServiceResult<CategoryResponse>> CreateCategoryAsync(CategoryRequest request)
         {
+            var normalizedName = NormalizeRequiredText(request.Name);
             var normalizedSlug = NormalizeSlug(request.Slug);
+
+            if (normalizedName is null || normalizedSlug is null)
+            {
+                return ServiceResult<CategoryResponse>.BadRequest("Category name and slug are required.");
+            }
+
             var slugExists = await context.Categories.AnyAsync(category => category.Slug == normalizedSlug);
 
             if (slugExists)
@@ -51,7 +58,7 @@ namespace DorisApp2.API.Services
 
             var category = new Category
             {
-                Name = request.Name.Trim(),
+                Name = normalizedName,
                 Slug = normalizedSlug,
                 Description = NormalizeOptionalText(request.Description),
                 IconName = NormalizeOptionalText(request.IconName),
@@ -76,7 +83,14 @@ namespace DorisApp2.API.Services
                 return ServiceResult<CategoryResponse>.NotFound("Category was not found.");
             }
 
+            var normalizedName = NormalizeRequiredText(request.Name);
             var normalizedSlug = NormalizeSlug(request.Slug);
+
+            if (normalizedName is null || normalizedSlug is null)
+            {
+                return ServiceResult<CategoryResponse>.BadRequest("Category name and slug are required.");
+            }
+
             var slugExists = await context.Categories
                 .AnyAsync(existing => existing.Id != id && existing.Slug == normalizedSlug);
 
@@ -85,7 +99,7 @@ namespace DorisApp2.API.Services
                 return ServiceResult<CategoryResponse>.Conflict("A category with this slug already exists.");
             }
 
-            category.Name = request.Name.Trim();
+            category.Name = normalizedName;
             category.Slug = normalizedSlug;
             category.Description = NormalizeOptionalText(request.Description);
             category.IconName = NormalizeOptionalText(request.IconName);
@@ -128,7 +142,14 @@ namespace DorisApp2.API.Services
                 return ServiceResult<SubCategoryResponse>.NotFound("Category was not found.");
             }
 
+            var normalizedName = NormalizeRequiredText(request.Name);
             var normalizedSlug = NormalizeSlug(request.Slug);
+
+            if (normalizedName is null || normalizedSlug is null)
+            {
+                return ServiceResult<SubCategoryResponse>.BadRequest("Subcategory name and slug are required.");
+            }
+
             var slugExists = await context.SubCategories
                 .AnyAsync(subCategory => subCategory.CategoryId == categoryId && subCategory.Slug == normalizedSlug);
 
@@ -140,8 +161,9 @@ namespace DorisApp2.API.Services
             var subCategory = new SubCategory
             {
                 CategoryId = categoryId,
-                Name = request.Name.Trim(),
+                Name = normalizedName,
                 Slug = normalizedSlug,
+                Description = NormalizeOptionalText(request.Description),
                 IsActive = request.IsActive,
                 CreatedAt = DateTime.UtcNow
             };
@@ -167,7 +189,14 @@ namespace DorisApp2.API.Services
                 return ServiceResult<SubCategoryResponse>.NotFound("Subcategory was not found.");
             }
 
+            var normalizedName = NormalizeRequiredText(request.Name);
             var normalizedSlug = NormalizeSlug(request.Slug);
+
+            if (normalizedName is null || normalizedSlug is null)
+            {
+                return ServiceResult<SubCategoryResponse>.BadRequest("Subcategory name and slug are required.");
+            }
+
             var slugExists = await context.SubCategories.AnyAsync(existing =>
                 existing.Id != subCategoryId &&
                 existing.CategoryId == categoryId &&
@@ -178,8 +207,9 @@ namespace DorisApp2.API.Services
                 return ServiceResult<SubCategoryResponse>.Conflict("A subcategory with this slug already exists in this category.");
             }
 
-            subCategory.Name = request.Name.Trim();
+            subCategory.Name = normalizedName;
             subCategory.Slug = normalizedSlug;
+            subCategory.Description = NormalizeOptionalText(request.Description);
             subCategory.IsActive = request.IsActive;
             subCategory.UpdatedAt = DateTime.UtcNow;
 
@@ -230,15 +260,23 @@ namespace DorisApp2.API.Services
                 CategoryId = subCategory.CategoryId,
                 Name = subCategory.Name,
                 Slug = subCategory.Slug,
+                Description = subCategory.Description,
                 IsActive = subCategory.IsActive,
                 CreatedAt = subCategory.CreatedAt,
                 UpdatedAt = subCategory.UpdatedAt
             };
         }
 
-        private static string NormalizeSlug(string slug)
+        private static string? NormalizeSlug(string? slug)
         {
-            return slug.Trim().ToLowerInvariant();
+            var normalizedSlug = slug?.Trim().ToLowerInvariant();
+            return string.IsNullOrWhiteSpace(normalizedSlug) ? null : normalizedSlug;
+        }
+
+        private static string? NormalizeRequiredText(string? value)
+        {
+            var trimmed = value?.Trim();
+            return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
         }
 
         private static string? NormalizeOptionalText(string? value)
@@ -268,6 +306,11 @@ namespace DorisApp2.API.Services
         {
             return new ServiceResult { Error = ServiceError.Conflict, Message = message };
         }
+
+        public static ServiceResult BadRequest(string message)
+        {
+            return new ServiceResult { Error = ServiceError.BadRequest, Message = message };
+        }
     }
 
     public class ServiceResult<T> : ServiceResult
@@ -288,11 +331,17 @@ namespace DorisApp2.API.Services
         {
             return new ServiceResult<T> { Error = ServiceError.Conflict, Message = message };
         }
+
+        public new static ServiceResult<T> BadRequest(string message)
+        {
+            return new ServiceResult<T> { Error = ServiceError.BadRequest, Message = message };
+        }
     }
 
     public enum ServiceError
     {
         None,
+        BadRequest,
         NotFound,
         Conflict
     }

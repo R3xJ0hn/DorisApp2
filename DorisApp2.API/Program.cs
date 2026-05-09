@@ -112,6 +112,7 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+await app.Services.SeedCategoriesAsync();
 
 app.UseHttpsRedirection();
 app.UseCors("ReactClient");

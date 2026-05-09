@@ -20,8 +20,6 @@ namespace DorisApp2.API.Models
         [MaxLength(100)]
         public string? IconName { get; set; }
 
-        public int DisplayOrder { get; set; }
-
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

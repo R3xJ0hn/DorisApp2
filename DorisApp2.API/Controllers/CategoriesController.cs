@@ -123,6 +123,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
     {
         return result.Error switch
         {
+            ServiceError.BadRequest => BadRequest(new { message = result.Message }),
             ServiceError.NotFound => NotFound(new { message = result.Message }),
             ServiceError.Conflict => Conflict(new { message = result.Message }),
             _ => BadRequest(new { message = result.Message ?? "Unable to complete category request." })
