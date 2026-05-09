@@ -201,6 +201,32 @@ function AdminCategoriesPage() {
     setIsEditing(false);
   };
 
+  const resetDrafts = () => {
+    setDraftName(selectedCategory.name);
+    setDraftSlug(selectedCategory.slug);
+    setDraftDescription(selectedCategory.description);
+    setDraftIconName(selectedCategory.iconName);
+    setIconQuery("");
+  };
+
+  const getUniqueCategorySlug = (slug: string) => {
+    const existingSlugs = new Set(
+      categories
+        .filter((category) => category.id !== selectedCategory.id)
+        .map((category) => category.slug),
+    );
+
+    let uniqueSlug = slug;
+    let suffix = 1;
+
+    while (existingSlugs.has(uniqueSlug)) {
+      uniqueSlug = `${slug}-${suffix}`;
+      suffix += 1;
+    }
+
+    return uniqueSlug;
+  };
+
   const handleCreateCategory = () => {
     const nextNumber = categories.length + 1;
     const nextCategory = {
@@ -219,19 +245,24 @@ function AdminCategoriesPage() {
   };
 
   const handleSaveDraft = () => {
+    const baseSlug =
+      toSlug(draftSlug) || toSlug(draftName) || selectedCategory.slug;
+    const validatedSlug = getUniqueCategorySlug(baseSlug);
+
     setCategories((current) =>
       current.map((category) =>
         category.id === selectedCategory.id
           ? {
               ...category,
               name: draftName,
-              slug: draftSlug,
+              slug: validatedSlug,
               description: draftDescription,
               iconName: draftIconName,
             }
           : category,
       ),
     );
+    setDraftSlug(validatedSlug);
     setIsEditing(false);
   };
 
@@ -443,7 +474,15 @@ function AdminCategoriesPage() {
                 variant={isEditing ? "secondary" : "outline"}
                 size="sm"
                 className="gap-2"
-                onClick={() => setIsEditing((editing) => !editing)}
+                onClick={() => {
+                  if (isEditing) {
+                    resetDrafts();
+                    setIsEditing(false);
+                    return;
+                  }
+
+                  setIsEditing(true);
+                }}
               >
                 <Pencil className="size-4" />
                 {isEditing ? "Editing" : "Edit"}

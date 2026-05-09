@@ -22,7 +22,7 @@ namespace DorisApp2.API.Models
 
         public bool IsActive { get; set; } = true;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
 
