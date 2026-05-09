@@ -11,6 +11,7 @@ import {
   PackageCheck,
   Wheat,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -93,6 +94,7 @@ const grocerySlides = [
 function ShopHero() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
+  const [focusedCategory, setFocusedCategory] = useState<string | null>(null)
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false)
   const currentSlide = grocerySlides[activeSlide]
 
@@ -152,11 +154,38 @@ function ShopHero() {
                 const isExpanded = expandedCategory === category.name
 
                 return (
-                  <div className="group/category relative" key={category.name}>
+                  <div
+                    className="group/category relative"
+                    key={category.name}
+                    onBlur={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget)) {
+                        setFocusedCategory(null)
+                      }
+                    }}
+                  >
                     <button
                       type="button"
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#a764f5]/8 hover:shadow-sm focus-visible:bg-[#a764f5]/8"
-                      aria-expanded={isExpanded}
+                      aria-expanded={
+                        isExpanded || focusedCategory === category.name
+                      }
+                      aria-haspopup="true"
+                      onFocus={() => setFocusedCategory(category.name)}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === 'Enter' ||
+                          event.key === 'ArrowDown'
+                        ) {
+                          event.preventDefault()
+                          setFocusedCategory(category.name)
+                          return
+                        }
+
+                        if (event.key === 'Escape') {
+                          event.preventDefault()
+                          setFocusedCategory(null)
+                        }
+                      }}
                       onClick={() => {
                         setExpandedCategory(isExpanded ? null : category.name)
                       }}
@@ -190,30 +219,36 @@ function ShopHero() {
                     <div className="min-h-0">
                       <div className="ml-12 space-y-1 pb-2">
                         {category.subcategories.map((subcategory) => (
-                          <a
+                          <Link
                             key={subcategory}
-                            href="/categories"
+                            to="/categories"
                             className="block rounded-xl px-3 py-2 text-sm text-(--shop-muted-foreground) transition-colors hover:bg-[#db8d48]/10 hover:text-[#db8d48]"
                           >
                             {subcategory}
-                          </a>
+                          </Link>
                         ))}
                       </div>
                     </div>
                   </div>
 
-                  <div className="pointer-events-none absolute left-0 top-[calc(100%-0.25rem)] z-30 hidden max-h-80 w-full translate-y-1 overflow-y-auto rounded-2xl border border-(--shop-border) bg-white p-2 opacity-0 shadow-[0_20px_50px_rgba(15,23,42,0.14)] transition-all duration-200 group-hover/category:pointer-events-auto group-hover/category:translate-y-0 group-hover/category:opacity-100 lg:left-[calc(100%-0.375rem)] lg:top-0 lg:block lg:w-60">
+                  <div
+                    className={cn(
+                      'pointer-events-none absolute left-0 top-[calc(100%-0.25rem)] z-30 hidden max-h-80 w-full translate-y-1 overflow-y-auto rounded-2xl border border-(--shop-border) bg-white p-2 opacity-0 shadow-[0_20px_50px_rgba(15,23,42,0.14)] transition-all duration-200 group-hover/category:pointer-events-auto group-hover/category:translate-y-0 group-hover/category:opacity-100 lg:left-[calc(100%-0.375rem)] lg:top-0 lg:block lg:w-60',
+                      focusedCategory === category.name &&
+                        'lg:pointer-events-auto lg:translate-y-0 lg:opacity-100',
+                    )}
+                  >
                     <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-[#a764f5]">
                       {category.name}
                     </p>
                     {category.subcategories.map((subcategory) => (
-                      <a
+                      <Link
                         key={subcategory}
-                        href="/categories"
+                        to="/categories"
                         className="block rounded-xl px-3 py-2 text-sm text-(--shop-muted-foreground) transition-colors hover:bg-[#db8d48]/10 hover:text-[#db8d48]"
                       >
                         {subcategory}
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 </div>

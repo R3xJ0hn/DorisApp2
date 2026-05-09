@@ -277,26 +277,31 @@ function ShopNavbar() {
           </div>
         </div>
 
-        {mobileMenuOpen && (
-          <div
-            className={cn(
-              "border-t px-6 py-8 lg:hidden",
-              "border-(--shop-border) bg-(--shop-background)",
-            )}
-          >
+        <div
+          className={cn(
+            "grid overflow-hidden transition-[grid-template-rows,opacity,transform,border-color] duration-300 ease-out lg:hidden",
+            "bg-(--shop-background)",
+            mobileMenuOpen
+              ? "grid-rows-[1fr] translate-y-0 border-t border-(--shop-border) opacity-100 h-auto"
+              : "pointer-events-none grid-rows-[0fr] -translate-y-2 border-t border-transparent opacity-0 h-0",
+          )}
+          aria-hidden={!mobileMenuOpen}
+          inert={!mobileMenuOpen ? true : undefined}
+        >
+          <div className="min-h-0 px-5 py-5">
             <NavLinks
               items={shopNavItems}
               className={cn(
-                "flex flex-col gap-3 text-md font-medium",
+                "flex flex-col gap-2.5 text-base font-medium",
                 "text-(--shop-muted-foreground)",
               )}
             />
 
-            <div className="mt-10 border-t border-(--shop-border) pt-9">
+            <div className="mt-5 border-t border-(--shop-border) pt-5">
               {userIsAuthenticated ? (
                 <nav
                   className={cn(
-                    "flex flex-col gap-3 text-md font-medium",
+                    "flex flex-col gap-2.5 text-base font-medium",
                     "text-(--shop-muted-foreground)",
                   )}
                 >
@@ -315,14 +320,14 @@ function ShopNavbar() {
                 <NavLinks
                   items={shopAccountItems}
                   className={cn(
-                    "flex flex-col gap-5 text-md font-medium",
+                    "flex flex-col gap-3 text-base font-medium",
                     "text-(--shop-muted-foreground)",
                   )}
                 />
               )}
             </div>
           </div>
-        )}
+        </div>
       </header>
     </>
   );
