@@ -43,8 +43,7 @@ namespace DorisApp2.API.Services
             if (!validationResult.Succeeded)
                 return ToTypedResult(validationResult);
 
-            var normalizedName = TextNormalizer.Required(request.Name)!;
-            var normalizedSlug = TextNormalizer.Slug(request.Slug)!;
+            var (normalizedName, normalizedSlug) = NormalizeProductIdentity(request);
 
             var slugExists = await context.Products.AnyAsync(product => product.Slug == normalizedSlug);
 
@@ -84,8 +83,7 @@ namespace DorisApp2.API.Services
             if (!validationResult.Succeeded)
                 return ToTypedResult(validationResult);
 
-            var normalizedName = TextNormalizer.Required(request.Name)!;
-            var normalizedSlug = TextNormalizer.Slug(request.Slug)!;
+            var (normalizedName, normalizedSlug) = NormalizeProductIdentity(request);
 
             var slugExists = await context.Products.AnyAsync(existing =>
                 existing.Id != id &&
@@ -167,6 +165,20 @@ namespace DorisApp2.API.Services
                 CreatedAt = product.CreatedAt,
                 UpdatedAt = product.UpdatedAt
             };
+        }
+
+        private static (string Name, string Slug) NormalizeProductIdentity(ProductRequest request)
+        {
+            var normalizedName = TextNormalizer.Required(request.Name);
+            var normalizedSlug = TextNormalizer.Slug(request.Slug);
+
+            if (normalizedName is null || normalizedSlug is null)
+            {
+                throw new InvalidOperationException(
+                    "Product request must be validated before normalizing name and slug.");
+            }
+
+            return (normalizedName, normalizedSlug);
         }
 
         private static ServiceResult<ProductResponse> ToTypedResult(ServiceResult result)

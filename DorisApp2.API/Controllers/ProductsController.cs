@@ -72,7 +72,7 @@ public class ProductsController(IProductService productService) : ControllerBase
         return NoContent();
     }
 
-    private ActionResult ToErrorResult(ServiceResult result)
+    private ActionResult ToErrorResult(IServiceResult result)
     {
         return result.Error switch
         {
