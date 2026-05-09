@@ -3,6 +3,7 @@ import {
   Boxes,
   ChartNoAxesColumnIncreasing,
   ClipboardList,
+  FolderTree,
   Home,
   LogOut,
   Package,
@@ -10,7 +11,7 @@ import {
   ShoppingCart,
   Users,
 } from "lucide-react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { logout } from "@/api/auth"
 import {
@@ -29,9 +30,10 @@ import {
 } from "@/components/ui/sidebar"
 
 const mainNav = [
-  { title: "Dashboard", href: "/admin", icon: Home, active: true },
+  { title: "Dashboard", href: "/admin", icon: Home },
   { title: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { title: "Products", href: "/admin/products", icon: Package },
+  { title: "Categories", href: "/admin/categories", icon: FolderTree },
   { title: "Inventory", href: "/admin/inventory", icon: Boxes },
   { title: "Customers", href: "/admin/customers", icon: Users },
   { title: "Reports", href: "/admin/reports", icon: ChartNoAxesColumnIncreasing },
@@ -45,6 +47,7 @@ const operationsNav = [
 
 function AdminSidebar() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = async () => {
     await logout()
@@ -85,7 +88,7 @@ function AdminSidebar() {
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    isActive={item.active}
+                    isActive={location.pathname === item.href}
                     tooltip={item.title}
                     render={<Link to={item.href} />}
                   >
@@ -104,6 +107,7 @@ function AdminSidebar() {
               {operationsNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
+                    isActive={location.pathname === item.href}
                     tooltip={item.title}
                     render={<Link to={item.href} />}
                   >
