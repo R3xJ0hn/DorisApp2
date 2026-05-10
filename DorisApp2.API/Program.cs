@@ -1,18 +1,26 @@
 using DorisApp2.API.Data;
+using DorisApp2.API.Services;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    });
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? throw new InvalidOperationException(
@@ -110,6 +118,12 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("SeedCategories"))
+{
+    // The seeder is idempotent; production seeding should use migrations
+    // or deployment scripts unless SeedCategories is explicitly enabled.
+    await app.Services.SeedCategoriesAsync();
+}
 
 app.UseHttpsRedirection();
 app.UseCors("ReactClient");

@@ -46,15 +46,12 @@ async function logout() {
   try {
     await api.post("/Auth/logout")
   } catch {
-    // Local auth state is already cleared; logout should not be blocked by an expired cookie.
+    // Local auth state is already cleared; 
+    // logout should not be blocked by an expired cookie.
   }
 }
 
 async function loadCurrentUser() {
-  if (authUser) {
-    return authUser
-  }
-
   profileRequest ??= api
     .get<StoredAuthUser>("/Profile/me")
     .then(({ data }) => {

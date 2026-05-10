@@ -1,11 +1,10 @@
-import heroImg from '@/assets/hero.png'
 import { Button } from '@/components/ui/button'
+import { ShopHero } from '@/components/shop/shop-hero'
 import { ShopNavbar } from '@/components/shop/shop-navbar'
 import {
   Heart,
   ShieldCheck,
   ShoppingBag,
-  Star,
   Truck,
 } from 'lucide-react'
 
@@ -34,49 +33,7 @@ function ShopHomepage() {
   return (
     <main className="min-h-svh bg-background text-foreground">
       <ShopNavbar />
-
-      <section className="mx-auto grid max-w-7xl gap-10 px-4 py-10 md:px-6 lg:grid-cols-[1fr_460px] lg:items-center lg:py-16">
-        <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-sm text-muted-foreground">
-            <Star className="size-4 fill-current text-amber-500" />
-            Curated essentials for everyday living
-          </div>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight md:text-6xl">
-            Shop practical pieces with a softer point of view.
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-            Doris Shop brings together clean everyday goods, thoughtful home
-            objects, and simple wardrobe staples in one calm storefront.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button size="lg">Shop new arrivals</Button>
-            <Button variant="outline" size="lg">
-              View collections
-            </Button>
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <div className="aspect-4/3 overflow-hidden rounded-lg bg-muted">
-            <img
-              src={heroImg}
-              className="size-full object-contain p-10"
-              alt="Featured Doris shop product"
-            />
-          </div>
-          <div className="mt-4 flex items-start justify-between gap-4">
-            <div>
-              <h2 className="font-medium">Featured drop</h2>
-              <p className="text-sm text-muted-foreground">
-                Limited launch edit
-              </p>
-            </div>
-            <span className="rounded-full bg-primary px-3 py-1 text-sm text-primary-foreground">
-              New
-            </span>
-          </div>
-        </div>
-      </section>
+      <ShopHero />
 
       <section className="border-y bg-muted/30">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 text-sm md:grid-cols-3 md:px-6">

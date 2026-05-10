@@ -25,11 +25,4 @@ public class ProfileController : ControllerBase
             role
         });
     }
-
-    [HttpGet("admin")]
-    [Authorize(Roles = "Admin")]
-    public IActionResult AdminOnly()
-    {
-        return Ok(new { message = "Only admin can access this." });
-    }
 }

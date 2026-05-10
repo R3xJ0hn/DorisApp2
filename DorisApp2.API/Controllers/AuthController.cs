@@ -14,7 +14,7 @@ namespace DorisApp2.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(AppDbContext context, IConfiguration config) : ControllerBase
+public class AuthController(AppDbContext context, IConfiguration config, IWebHostEnvironment environment) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request)
@@ -23,9 +23,7 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
             .AnyAsync(u => u.Email == request.Email);
 
         if (emailExists)
-        {
             return Conflict(new { message = "Email is already registered." });
-        }
 
         var user = new User
         {
@@ -64,16 +62,12 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
             .FirstOrDefaultAsync(u => u.Email == request.Email);
 
         if (user == null)
-        {
             return Unauthorized(new { message = "Invalid email or password." });
-        }
 
         var isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
 
         if (!isPasswordValid)
-        {
             return Unauthorized(new { message = "Invalid email or password." });
-        }
 
         var token = GenerateJwtToken(user);
         SetAuthCookie(token);
@@ -129,30 +123,25 @@ public class AuthController(AppDbContext context, IConfiguration config) : Contr
 
     private CookieOptions GetCookieOptions()
     {
+        var isDevelopment = environment.IsDevelopment();
+        var expiresInMinutes = int.Parse(config["Jwt:ExpiresInMinutes"]!);
+
         return new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTimeOffset.UtcNow.AddMinutes(GetJwtExpiresInMinutes())
+            Secure = !isDevelopment,
+            SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None,
+            Path = "/",
+            Expires = DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes)
         };
-    }
-
-    private int GetJwtExpiresInMinutes()
-    {
-        return int.Parse(config["Jwt:ExpiresInMinutes"]!);
     }
 
     private static bool IsUniqueEmailConflict(DbUpdateException exception)
     {
         for (var current = exception.InnerException; current is not null; current = current.InnerException)
-        {
             if (current is SqlException sqlException &&
                 sqlException.Errors.Cast<SqlError>().Any(error => error.Number is 2601 or 2627))
-            {
                 return true;
-            }
-        }
 
         return false;
     }
