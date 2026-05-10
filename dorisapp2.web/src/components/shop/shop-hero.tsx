@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ChevronDown,
   ChevronRight,
@@ -28,6 +29,12 @@ type HeroCategory = {
   iconName: IconName
   count: string
   subcategories: HeroSubcategory[]
+}
+
+type FlyoutPosition = {
+  left: number
+  top: number
+  maxHeight: number
 }
 
 const grocerySlides = [
@@ -71,9 +78,56 @@ function ShopHero() {
   const [categories, setCategories] = useState<HeroCategory[]>([])
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
   const [focusedCategory, setFocusedCategory] = useState<string | null>(null)
+  const [desktopFlyoutCategory, setDesktopFlyoutCategory] =
+    useState<HeroCategory | null>(null)
+  const [flyoutPosition, setFlyoutPosition] = useState<FlyoutPosition | null>(
+    null,
+  )
   const [isLoadingCategories, setIsLoadingCategories] = useState(true)
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false)
+  const flyoutCloseTimer = useRef<number | null>(null)
   const currentSlide = grocerySlides[activeSlide]
+
+  const clearFlyoutCloseTimer = () => {
+    if (flyoutCloseTimer.current !== null) {
+      window.clearTimeout(flyoutCloseTimer.current)
+      flyoutCloseTimer.current = null
+    }
+  }
+
+  const openDesktopFlyout = (
+    category: HeroCategory,
+    trigger: HTMLElement,
+  ) => {
+    if (!window.matchMedia('(min-width: 1024px)').matches) {
+      return
+    }
+
+    clearFlyoutCloseTimer()
+
+    const rect = trigger.getBoundingClientRect()
+    const panelTop = Math.max(16, rect.top)
+    const maxPanelHeight = 320
+    const availableHeight = window.innerHeight - panelTop - 16
+
+    setDesktopFlyoutCategory(category)
+    setFlyoutPosition({
+      left: rect.right - 6,
+      top: panelTop,
+      maxHeight: Math.max(
+        96,
+        Math.min(maxPanelHeight, availableHeight),
+      ),
+    })
+  }
+
+  const scheduleCloseDesktopFlyout = () => {
+    clearFlyoutCloseTimer()
+    flyoutCloseTimer.current = window.setTimeout(() => {
+      setDesktopFlyoutCategory(null)
+      setFlyoutPosition(null)
+    }, 120)
+  }
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -114,10 +168,18 @@ function ShopHero() {
     }
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (flyoutCloseTimer.current !== null) {
+        window.clearTimeout(flyoutCloseTimer.current)
+      }
+    }
+  }, [])
+
   return (
     <section className="bg-[linear-gradient(180deg,#fff_0%,#fbf8ff_48%,#fff7ed_100%)]">
       <div className="mx-auto grid max-w-7xl gap-4 px-4 py-4 md:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-stretch">
-        <aside className="relative z-10 rounded-2xl border border-(--shop-border) bg-white/95 p-2.5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:h-100">
+        <aside className="relative z-10 flex min-h-0 flex-col rounded-2xl border border-(--shop-border) bg-white/95 p-2.5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:h-100">
           <div className="flex items-center justify-between px-2 py-1.5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-normal text-(--shop-secondary-foreground)">
@@ -150,11 +212,15 @@ function ShopHero() {
 
           <nav
             className={cn(
-              'mt-2 overflow-hidden transition-all duration-300 lg:block lg:overflow-visible',
+              'shop-scrollbar mt-2 min-h-0 overflow-hidden transition-all duration-300 lg:block lg:flex-1 lg:overflow-y-auto lg:pr-1',
               mobileCategoriesOpen
-                ? 'max-h-88 overflow-y-auto opacity-100'
+                ? 'max-h-88 overflow-y-auto pr-1 opacity-100'
                 : 'max-h-0 opacity-0 lg:max-h-none lg:opacity-100',
             )}
+            onScroll={() => {
+              setDesktopFlyoutCategory(null)
+              setFlyoutPosition(null)
+            }}
           >
             <div className="space-y-1">
               {isLoadingCategories && (
@@ -191,8 +257,10 @@ function ShopHero() {
                     onBlur={(event) => {
                       if (!event.currentTarget.contains(event.relatedTarget)) {
                         setFocusedCategory(null)
+                        scheduleCloseDesktopFlyout()
                       }
                     }}
+                    onMouseLeave={scheduleCloseDesktopFlyout}
                   >
                     <button
                       type="button"
@@ -201,7 +269,13 @@ function ShopHero() {
                         isExpanded || focusedCategory === category.name
                       }
                       aria-haspopup="true"
-                      onFocus={() => setFocusedCategory(category.name)}
+                      onFocus={(event) => {
+                        setFocusedCategory(category.name)
+                        openDesktopFlyout(category, event.currentTarget)
+                      }}
+                      onMouseEnter={(event) => {
+                        openDesktopFlyout(category, event.currentTarget)
+                      }}
                       onKeyDown={(event) => {
                         if (
                           event.key === 'Enter' ||
@@ -215,6 +289,8 @@ function ShopHero() {
                         if (event.key === 'Escape') {
                           event.preventDefault()
                           setFocusedCategory(null)
+                          setDesktopFlyoutCategory(null)
+                          setFlyoutPosition(null)
                         }
                       }}
                       onClick={() => {
@@ -265,32 +341,41 @@ function ShopHero() {
                     </div>
                   </div>
 
-                  <div
-                    className={cn(
-                      'pointer-events-none absolute left-0 top-[calc(100%-0.25rem)] z-30 hidden max-h-80 w-full translate-y-1 overflow-y-auto rounded-2xl border border-(--shop-border) bg-white p-2 opacity-0 shadow-[0_20px_50px_rgba(15,23,42,0.14)] transition-all duration-200 group-hover/category:pointer-events-auto group-hover/category:translate-y-0 group-hover/category:opacity-100 lg:left-[calc(100%-0.375rem)] lg:top-0 lg:block lg:w-60',
-                      focusedCategory === category.name &&
-                        'lg:pointer-events-auto lg:translate-y-0 lg:opacity-100',
-                    )}
-                  >
-                    <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-[#a764f5]">
-                      {category.name}
-                    </p>
-                    {category.subcategories.map((subcategory) => (
-                      <Link
-                        key={subcategory.id}
-                        to={`/categories?category=${category.slug}&subcategory=${subcategory.slug}`}
-                        className="block rounded-xl px-3 py-2 text-sm text-(--shop-muted-foreground) transition-colors hover:bg-[#db8d48]/10 hover:text-[#db8d48]"
-                      >
-                        {subcategory.name}
-                      </Link>
-                    ))}
-                  </div>
                 </div>
               )
             })}
             </div>
           </nav>
         </aside>
+
+        {desktopFlyoutCategory &&
+          flyoutPosition &&
+          createPortal(
+            <div
+              className="shop-scrollbar fixed z-50 hidden w-60 overflow-y-auto rounded-2xl border border-(--shop-border) bg-white p-2 shadow-[0_20px_50px_rgba(15,23,42,0.14)] lg:block"
+              style={{
+                left: flyoutPosition.left,
+                maxHeight: flyoutPosition.maxHeight,
+                top: flyoutPosition.top,
+              }}
+              onMouseEnter={clearFlyoutCloseTimer}
+              onMouseLeave={scheduleCloseDesktopFlyout}
+            >
+              <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-[#a764f5]">
+                {desktopFlyoutCategory.name}
+              </p>
+              {desktopFlyoutCategory.subcategories.map((subcategory) => (
+                <Link
+                  key={subcategory.id}
+                  to={`/categories?category=${desktopFlyoutCategory.slug}&subcategory=${subcategory.slug}`}
+                  className="block rounded-xl px-3 py-2 text-sm text-(--shop-muted-foreground) transition-colors hover:bg-[#db8d48]/10 hover:text-[#db8d48]"
+                >
+                  {subcategory.name}
+                </Link>
+              ))}
+            </div>,
+            document.body,
+          )}
 
         <div className="relative h-100 overflow-hidden rounded-3xl border border-white/80 bg-[#15111f] shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
           <img
