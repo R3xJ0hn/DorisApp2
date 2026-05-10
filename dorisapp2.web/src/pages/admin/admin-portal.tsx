@@ -13,6 +13,7 @@ import { useLocation } from "react-router-dom"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { Button } from "@/components/ui/button"
 import { AdminCategoriesPage } from "@/pages/admin/admin-categories-page"
+import { AdminProductsPage } from "@/pages/admin/admin-products-page"
 import {
   SidebarInset,
   SidebarProvider,
@@ -164,6 +165,12 @@ function AdminDashboardPage() {
 function AdminPortal() {
   const location = useLocation()
   const isCategoriesPage = location.pathname === "/admin/categories"
+  const isProductsPage = location.pathname === "/admin/products"
+  const pageTitle = isCategoriesPage
+    ? "Categories"
+    : isProductsPage
+      ? "Products"
+      : "Dashboard"
 
   return (
     <SidebarProvider>
@@ -173,17 +180,23 @@ function AdminPortal() {
           <SidebarTrigger />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-medium">
-              {isCategoriesPage ? "Categories" : "Dashboard"}
+              {pageTitle}
             </h1>
           </div>
           <div className="hidden h-8 w-72 items-center gap-2 rounded-md border bg-muted/30 px-3 text-sm text-muted-foreground md:flex">
             <Search className="size-4" />
             <span>Search orders, products, customers</span>
           </div>
-          {!isCategoriesPage && <Button size="sm">New order</Button>}
+          {!isCategoriesPage && !isProductsPage && <Button size="sm">New order</Button>}
         </header>
 
-        {isCategoriesPage ? <AdminCategoriesPage /> : <AdminDashboardPage />}
+        {isCategoriesPage ? (
+          <AdminCategoriesPage />
+        ) : isProductsPage ? (
+          <AdminProductsPage />
+        ) : (
+          <AdminDashboardPage />
+        )}
       </SidebarInset>
     </SidebarProvider>
   )
