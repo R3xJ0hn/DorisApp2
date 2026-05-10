@@ -84,29 +84,33 @@ function ShopHero() {
   }, [])
 
   useEffect(() => {
-    let isMounted = true
+    const controller = new AbortController()
 
-    getCategories()
+    getCategories({ signal: controller.signal })
       .then((apiCategories) => {
-        if (!isMounted) {
+        if (controller.signal.aborted) {
           return
         }
 
         setCategories(toHeroCategories(apiCategories))
       })
       .catch(() => {
-        if (isMounted) {
-          setCategories([])
+        if (controller.signal.aborted) {
+          return
         }
+
+        setCategories([])
       })
       .finally(() => {
-        if (isMounted) {
-          setIsLoadingCategories(false)
+        if (controller.signal.aborted) {
+          return
         }
+
+        setIsLoadingCategories(false)
       })
 
     return () => {
-      isMounted = false
+      controller.abort()
     }
   }, [])
 
@@ -361,7 +365,6 @@ function toHeroCategories(categories: ApiCategory[]): HeroCategory[] {
     .map((category) => {
       const subcategories = (
         category.subCategories ??
-        category.SubCategories ??
         []
       ).filter((subcategory) => subcategory.isActive)
 

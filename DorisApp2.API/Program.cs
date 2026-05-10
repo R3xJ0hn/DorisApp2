@@ -3,13 +3,19 @@ using DorisApp2.API.Services;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    });
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -112,7 +118,12 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-await app.Services.SeedCategoriesAsync();
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("SeedCategories"))
+{
+    // The seeder is idempotent; production seeding should use migrations
+    // or deployment scripts unless SeedCategories is explicitly enabled.
+    await app.Services.SeedCategoriesAsync();
+}
 
 app.UseHttpsRedirection();
 app.UseCors("ReactClient");

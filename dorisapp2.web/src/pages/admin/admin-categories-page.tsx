@@ -1,8 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AxiosError } from "axios";
 import { ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import type { IconName } from "lucide-react/dynamic";
+import { toast } from "sonner";
 
+import {
+  createCategory,
+  createSubCategory,
+  deleteCategory,
+  deleteSubCategory,
+  getCategories,
+  updateCategory,
+} from "@/api/categories";
+import type { ApiCategory } from "@/api/categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { iconOptions } from "@/lib/lucide-icon-tags";
@@ -152,6 +163,8 @@ function AdminCategoriesPage() {
   );
   const [iconQuery, setIconQuery] = useState("");
   const [newSubcategory, setNewSubcategory] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const selectedCategory =
     categories.find((category) => category.id === selectedId) ?? categories[0];
@@ -190,7 +203,7 @@ function AdminCategoriesPage() {
     );
   }, [iconQuery]);
 
-  const handleSelectCategory = (category: ShopCategory) => {
+  const syncDraft = (category: ShopCategory) => {
     setSelectedId(category.id);
     setDraftName(category.name);
     setDraftSlug(category.slug);
@@ -201,64 +214,149 @@ function AdminCategoriesPage() {
     setIsEditing(false);
   };
 
-  const handleCreateCategory = () => {
+  const showCategoryError = (error: unknown) => {
+    toast.error("Category update failed", {
+      description: getCategoryErrorMessage(error),
+    });
+  };
+
+  const refreshCategories = async (preferredId = selectedId) => {
+    const apiCategories = await getCategories();
+    const nextCategories = toShopCategories(apiCategories);
+    const nextSelected =
+      nextCategories.find((category) => category.id === preferredId) ??
+      nextCategories[0];
+
+    setCategories(nextCategories);
+
+    if (nextSelected) {
+      syncDraft(nextSelected);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getCategories()
+      .then((apiCategories) => {
+        if (!isMounted) {
+          return;
+        }
+
+        const nextCategories = toShopCategories(apiCategories);
+        const nextSelected = nextCategories[0];
+
+        setCategories(nextCategories);
+
+        if (nextSelected) {
+          syncDraft(nextSelected);
+        }
+
+      })
+      .catch((error) => {
+        if (isMounted) {
+          showCategoryError(error);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSelectCategory = (category: ShopCategory) => {
+    syncDraft(category);
+  };
+
+  const handleCreateCategory = async () => {
     const nextNumber = categories.length + 1;
-    const nextCategory = {
-      id: `new-category-${nextNumber}`,
-      name: "New Category",
-      slug: `new-category-${nextNumber}`,
-      description: "New category description.",
-      itemCount: 0,
-      isActive: false,
-      iconName: "apple" as IconName,
-      subcategories: [],
-    } satisfies ShopCategory;
+    const name = "New Category";
+    const slug = `new-category-${nextNumber}`;
 
-    setCategories((current) => [nextCategory, ...current]);
-    handleSelectCategory(nextCategory);
+    setIsSaving(true);
+
+    try {
+      const createdCategory = await createCategory({
+        name,
+        slug,
+        description: "New category description.",
+        iconName: "apple",
+        isActive: false,
+      });
+
+      await refreshCategories(String(createdCategory.id));
+    } catch (error) {
+      showCategoryError(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaveDraft = () => {
-    setCategories((current) =>
-      current.map((category) =>
-        category.id === selectedCategory.id
-          ? {
-              ...category,
-              name: draftName,
-              slug: draftSlug,
-              description: draftDescription,
-              iconName: draftIconName,
-            }
-          : category,
-      ),
-    );
-    setIsEditing(false);
+  const handleSaveDraft = async () => {
+    setIsSaving(true);
+
+    try {
+      await updateCategory(Number(selectedCategory.id), {
+        name: draftName,
+        slug: draftSlug,
+        description: draftDescription,
+        iconName: draftIconName,
+        isActive: selectedCategory.isActive,
+      });
+      await refreshCategories(selectedCategory.id);
+      setIsEditing(false);
+    } catch (error) {
+      showCategoryError(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleToggleCategoryActive = () => {
-    setCategories((current) =>
-      current.map((category) =>
-        category.id === selectedCategory.id
-          ? { ...category, isActive: !category.isActive }
-          : category,
-      ),
-    );
+  const handleToggleCategoryActive = async () => {
+    setIsSaving(true);
+
+    try {
+      await updateCategory(Number(selectedCategory.id), {
+        name: selectedCategory.name,
+        slug: selectedCategory.slug,
+        description: selectedCategory.description,
+        iconName: selectedCategory.iconName,
+        isActive: !selectedCategory.isActive,
+      });
+      await refreshCategories(selectedCategory.id);
+    } catch (error) {
+      showCategoryError(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDeleteCategory = () => {
+  const handleDeleteCategory = async () => {
     if (categories.length === 1) {
       return;
     }
 
-    const remainingCategories = categories.filter(
-      (category) => category.id !== selectedCategory.id,
-    );
+    setIsSaving(true);
 
-    setCategories(remainingCategories);
-    handleSelectCategory(remainingCategories[0]);
+    try {
+      await deleteCategory(Number(selectedCategory.id));
+      const remainingCategories = categories.filter(
+        (category) => category.id !== selectedCategory.id,
+      );
+      await refreshCategories(remainingCategories[0]?.id);
+    } catch (error) {
+      showCategoryError(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleAddSubcategory = () => {
+  const handleAddSubcategory = async () => {
     const trimmedName = newSubcategory.trim();
     const nextSlug = toSlug(trimmedName);
 
@@ -277,40 +375,35 @@ function AdminCategoriesPage() {
       return;
     }
 
-    setCategories((current) =>
-      current.map((category) =>
-        category.id === selectedCategory.id
-          ? {
-              ...category,
-              subcategories: [
-                ...category.subcategories,
-                {
-                  id: nextSlug,
-                  name: trimmedName,
-                  slug: nextSlug,
-                  productCount: 0,
-                },
-              ],
-            }
-          : category,
-      ),
-    );
-    setNewSubcategory("");
+    setIsSaving(true);
+
+    try {
+      await createSubCategory(Number(selectedCategory.id), {
+        name: trimmedName,
+        slug: nextSlug,
+        description: null,
+        isActive: selectedCategory.isActive,
+      });
+      await refreshCategories(selectedCategory.id);
+      setNewSubcategory("");
+    } catch (error) {
+      showCategoryError(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleRemoveSubcategory = (id: string) => {
-    setCategories((current) =>
-      current.map((category) =>
-        category.id === selectedCategory.id
-          ? {
-              ...category,
-              subcategories: category.subcategories.filter(
-                (subcategory) => subcategory.id !== id,
-              ),
-            }
-          : category,
-      ),
-    );
+  const handleRemoveSubcategory = async (id: string) => {
+    setIsSaving(true);
+
+    try {
+      await deleteSubCategory(Number(selectedCategory.id), Number(id));
+      await refreshCategories(selectedCategory.id);
+    } catch (error) {
+      showCategoryError(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const selectedIconName = isEditing
@@ -323,10 +416,19 @@ function AdminCategoriesPage() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Categories</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            UI draft for managing shop categories and subcategories.
+            Manage shop categories and subcategories from the API.
           </p>
+          {(isLoading || isSaving) && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {isSaving ? "Saving category changes..." : "Loading categories..."}
+            </p>
+          )}
         </div>
-        <Button className="gap-2" onClick={handleCreateCategory}>
+        <Button
+          className="gap-2"
+          disabled={isLoading || isSaving}
+          onClick={handleCreateCategory}
+        >
           <Plus className="size-4" />
           New category
         </Button>
@@ -360,6 +462,7 @@ function AdminCategoriesPage() {
                     "flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted",
                     isSelected && "bg-muted",
                   )}
+                  disabled={isSaving}
                   onClick={() => handleSelectCategory(category)}
                 >
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#a764f5]/10 text-[#a764f5]">
@@ -420,6 +523,7 @@ function AdminCategoriesPage() {
                 type="button"
                 role="switch"
                 aria-checked={selectedCategory.isActive}
+                disabled={isSaving}
                 onClick={handleToggleCategoryActive}
                 className={cn(
                   "flex h-8 items-center gap-2 rounded-full border px-2.5 text-xs font-medium transition-colors",
@@ -443,6 +547,7 @@ function AdminCategoriesPage() {
                 variant={isEditing ? "secondary" : "outline"}
                 size="sm"
                 className="gap-2"
+                disabled={isSaving}
                 onClick={() => setIsEditing((editing) => !editing)}
               >
                 <Pencil className="size-4" />
@@ -581,6 +686,7 @@ function AdminCategoriesPage() {
                     <Button
                       type="button"
                       variant="outline"
+                      disabled={isSaving}
                       onClick={handleAddSubcategory}
                     >
                       Add
@@ -607,6 +713,7 @@ function AdminCategoriesPage() {
                         type="button"
                         variant="ghost"
                         size="icon-sm"
+                        disabled={isSaving}
                         aria-label={`Remove ${subcategory.name}`}
                         onClick={() =>
                           handleRemoveSubcategory(subcategory.id)
@@ -629,13 +736,13 @@ function AdminCategoriesPage() {
                   type="button"
                   variant="destructive"
                   className="gap-2"
-                  disabled={categories.length === 1}
+                  disabled={categories.length === 1 || isSaving}
                   onClick={handleDeleteCategory}
                 >
                   <Trash2 className="size-4" />
                   Delete category
                 </Button>
-                <Button type="button" onClick={handleSaveDraft}>
+                <Button type="button" disabled={isSaving} onClick={handleSaveDraft}>
                   Save changes
                 </Button>
               </div>
@@ -675,6 +782,62 @@ function AdminCategoriesPage() {
       </section>
     </main>
   );
+}
+
+function toShopCategories(apiCategories: ApiCategory[]): ShopCategory[] {
+  return apiCategories.map((category) => {
+    const subcategories = category.subCategories ?? [];
+
+    return {
+      id: String(category.id),
+      name: category.name,
+      slug: category.slug,
+      description: category.description ?? "",
+      itemCount: 0,
+      isActive: category.isActive,
+      iconName: (category.iconName || "package-check") as IconName,
+      subcategories: subcategories.map((subcategory) => ({
+        id: String(subcategory.id),
+        name: subcategory.name,
+        slug: subcategory.slug,
+        productCount: 0,
+      })),
+    };
+  });
+}
+
+function getCategoryErrorMessage(error: unknown) {
+  if (error instanceof AxiosError) {
+    if (error.response?.status === 401) {
+      return "Your admin session is missing or expired. Sign in again before changing categories.";
+    }
+
+    if (error.response?.status === 403) {
+      return "Your account does not have permission to change categories.";
+    }
+
+    const data = error.response?.data as
+      | { message?: string; title?: string; errors?: Record<string, string[]> }
+      | undefined;
+
+    if (data?.message) {
+      return data.message;
+    }
+
+    const firstValidationError = data?.errors
+      ? Object.values(data.errors).flat()[0]
+      : undefined;
+
+    if (firstValidationError) {
+      return firstValidationError;
+    }
+
+    if (data?.title) {
+      return data.title;
+    }
+  }
+
+  return "Unable to update categories. Please try again.";
 }
 
 export { AdminCategoriesPage };

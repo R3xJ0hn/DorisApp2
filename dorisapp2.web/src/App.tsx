@@ -5,6 +5,7 @@ import { AdminPortal } from './pages/admin/admin-portal'
 import { LoginPage, RegisterPage } from './pages/auth-pages'
 import { AccountPage } from './pages/account-page'
 import { isAdmin, loadCurrentUser } from './api/auth'
+import { Toaster } from './components/ui/sonner'
 
 function AdminRoute() {
   const [status, setStatus] = useState<'loading' | 'allowed' | 'login' | 'home'>(
@@ -49,18 +50,21 @@ function AdminRoute() {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<ShopHomepage />} />
-      <Route path="/categories" element={<ShopHomepage />} />
-      <Route path="/new-arrivals" element={<ShopHomepage />} />
-      <Route path="/sale" element={<ShopHomepage />} />
-      <Route path="/about" element={<ShopHomepage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/account" element={<AccountPage />} />
-      <Route path="/admin/*" element={<AdminRoute />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<ShopHomepage />} />
+        <Route path="/categories" element={<ShopHomepage />} />
+        <Route path="/new-arrivals" element={<ShopHomepage />} />
+        <Route path="/sale" element={<ShopHomepage />} />
+        <Route path="/about" element={<ShopHomepage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/admin/*" element={<AdminRoute />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toaster />
+    </>
   )
 }
 
