@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { AxiosError } from "axios";
-import { ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import type { IconName } from "lucide-react/dynamic";
 import { toast } from "sonner";
@@ -43,6 +43,7 @@ function AdminCategoriesPage() {
   const [newSubcategory, setNewSubcategory] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"list" | "details">("list");
 
   const selectedCategory = categories.find((category) => category.id === selectedId) ?? categories[0];
   const isNewCategoryDraft = selectedCategory?.id === newCategoryDraftId;
@@ -67,6 +68,11 @@ function AdminCategoriesPage() {
     setDraft(toDraft(category));
     resetTransientInputs();
     setIsEditing(editing);
+  };
+
+  const openCategoryDetails = (category: ShopCategory, editing = false) => {
+    syncDraft(category, editing);
+    setMobilePanel("details");
   };
 
   const showCategoryError = (error: unknown) => {
@@ -140,7 +146,7 @@ function AdminCategoriesPage() {
   const handleCreateCategory = () => {
     const draftCategory = createLocalCategoryDraft(categories);
     setCategories((current) => [...current.filter((category) => category.id !== newCategoryDraftId), draftCategory]);
-    syncDraft(draftCategory, true);
+    openCategoryDetails(draftCategory, true);
   };
 
   const handleSaveDraft = async () => {
@@ -263,48 +269,77 @@ function AdminCategoriesPage() {
     <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
       <PageHeader isLoading={isLoading} isSaving={isSaving} onCreate={handleCreateCategory} />
 
-      <section className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      <section className="relative grid gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] xl:overflow-visible">
         {isLoading ? (
           <>
-            <CategoryListSkeleton />
-            <CategoryPanelSkeleton />
+            <div
+              className={cn(
+                "transition-all duration-300 ease-out motion-reduce:transition-none",
+                mobilePanel === "list" ? "relative translate-x-0 opacity-100" : "pointer-events-none absolute inset-x-0 top-0 -translate-x-8 opacity-0",
+                "xl:relative xl:inset-auto xl:translate-x-0 xl:opacity-100",
+              )}
+            >
+              <CategoryListSkeleton />
+            </div>
+            <div className="hidden xl:block">
+              <CategoryPanelSkeleton />
+            </div>
           </>
         ) : (
           <>
-            <CategoryList
-              categories={filteredCategories}
-              isSaving={isSaving}
-              query={query}
-              selectedId={selectedCategory?.id}
-              onQueryChange={setQuery}
-              onSelect={syncDraft}
-            />
-
-            {selectedCategory ? (
-              <CategoryPanel
-                category={selectedCategory}
-                categoriesCount={categories.length}
-                draft={draft}
-                iconOptions={filteredIconOptions}
-                iconQuery={iconQuery}
-                isEditing={isEditing}
-                isNewDraft={isNewCategoryDraft}
+            <div
+              aria-hidden={mobilePanel === "details"}
+              className={cn(
+                "transition-all duration-300 ease-out motion-reduce:transition-none",
+                mobilePanel === "list" ? "relative translate-x-0 opacity-100" : "pointer-events-none absolute inset-x-0 top-0 -translate-x-8 opacity-0",
+                "xl:relative xl:inset-auto xl:pointer-events-auto xl:translate-x-0 xl:opacity-100",
+              )}
+            >
+              <CategoryList
+                categories={filteredCategories}
                 isSaving={isSaving}
-                newSubcategory={newSubcategory}
-                selectedIconName={selectedIconName}
-                setDraft={setDraft}
-                setIconQuery={setIconQuery}
-                setIsEditing={setIsEditing}
-                setNewSubcategory={setNewSubcategory}
-                onAddSubcategory={handleAddSubcategory}
-                onDelete={handleDeleteCategory}
-                onRemoveSubcategory={handleRemoveSubcategory}
-                onSave={handleSaveDraft}
-                onToggleActive={handleToggleCategoryActive}
+                query={query}
+                selectedId={selectedCategory?.id}
+                onQueryChange={setQuery}
+                onSelect={openCategoryDetails}
               />
-            ) : (
-              <EmptyCategoryPanel isSaving={isSaving} onCreate={handleCreateCategory} />
-            )}
+            </div>
+
+            <div
+              aria-hidden={mobilePanel === "list"}
+              className={cn(
+                "transition-all duration-300 ease-out motion-reduce:transition-none",
+                mobilePanel === "details" ? "relative translate-x-0 opacity-100" : "pointer-events-none absolute inset-x-0 top-0 translate-x-8 opacity-0",
+                "xl:relative xl:inset-auto xl:pointer-events-auto xl:translate-x-0 xl:opacity-100",
+              )}
+            >
+              {selectedCategory ? (
+                <CategoryPanel
+                  category={selectedCategory}
+                  categoriesCount={categories.length}
+                  draft={draft}
+                  iconOptions={filteredIconOptions}
+                  iconQuery={iconQuery}
+                  isEditing={isEditing}
+                  isNewDraft={isNewCategoryDraft}
+                  isSaving={isSaving}
+                  newSubcategory={newSubcategory}
+                  selectedIconName={selectedIconName}
+                  setDraft={setDraft}
+                  setIconQuery={setIconQuery}
+                  setIsEditing={setIsEditing}
+                  setNewSubcategory={setNewSubcategory}
+                  onAddSubcategory={handleAddSubcategory}
+                  onBack={() => setMobilePanel("list")}
+                  onDelete={handleDeleteCategory}
+                  onRemoveSubcategory={handleRemoveSubcategory}
+                  onSave={handleSaveDraft}
+                  onToggleActive={handleToggleCategoryActive}
+                />
+              ) : (
+                <EmptyCategoryPanel isSaving={isSaving} onCreate={handleCreateCategory} />
+              )}
+            </div>
           </>
         )}
       </section>
@@ -317,7 +352,7 @@ function PageHeader({ isLoading, isSaving, onCreate }: { isLoading: boolean; isS
     <section className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Categories</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Manage shop categories and subcategories from the API.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Manage your shop categories and subcategories.</p>
       </div>
       <Button className="gap-2" disabled={isLoading || isSaving} onClick={onCreate}>
         <Plus className="size-4" />
@@ -413,6 +448,7 @@ function CategoryPanel(props: {
   setIsEditing: Dispatch<SetStateAction<boolean>>;
   setNewSubcategory: (name: string) => void;
   onAddSubcategory: () => void;
+  onBack: () => void;
   onDelete: () => void;
   onRemoveSubcategory: (id: string) => void;
   onSave: () => void;
@@ -469,6 +505,7 @@ function CategoryPanelHeader({
   selectedIconName,
   setIsEditing,
   onToggleActive,
+  onBack,
 }: {
   category: ShopCategory;
   draft: Draft;
@@ -477,9 +514,16 @@ function CategoryPanelHeader({
   selectedIconName: IconName;
   setIsEditing: Dispatch<SetStateAction<boolean>>;
   onToggleActive: () => void;
+  onBack?: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b p-4">
+    <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+      {onBack && (
+        <Button type="button" variant="ghost" size="sm" className="w-fit gap-2 px-0 xl:hidden" onClick={onBack}>
+          <ArrowLeft className="size-4" />
+          Categories
+        </Button>
+      )}
       <div className="flex items-center gap-3">
         <span className="flex size-10 items-center justify-center rounded-lg bg-[#db8d48]/10 text-[#db8d48]">
           <DynamicIcon name={selectedIconName} className="size-5" />
