@@ -51,8 +51,12 @@ function AdminSidebar() {
   const location = useLocation()
 
   const handleLogout = async () => {
-    await logout()
-    navigate("/login", { replace: true })
+    try {
+      await logout()
+      navigate("/login", { replace: true })
+    } catch (error) {
+      console.error("Logout failed", error)
+    }
   }
 
   return (

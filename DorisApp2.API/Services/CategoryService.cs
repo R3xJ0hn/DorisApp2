@@ -1,6 +1,7 @@
 using DorisApp2.API.Data;
 using DorisApp2.API.Dtos;
 using DorisApp2.API.Models;
+using DorisApp2.API.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DorisApp2.API.Services
@@ -41,8 +42,8 @@ namespace DorisApp2.API.Services
 
         public async Task<ServiceResult<CategoryResponse>> CreateCategoryAsync(CategoryRequest request)
         {
-            var normalizedName = NormalizeRequiredText(request.Name);
-            var normalizedSlug = NormalizeSlug(request.Slug);
+            var normalizedName = TextNormalizer.Required(request.Name);
+            var normalizedSlug = TextNormalizer.Slug(request.Slug);
 
             if (normalizedName is null || normalizedSlug is null)
             {
@@ -60,8 +61,8 @@ namespace DorisApp2.API.Services
             {
                 Name = normalizedName,
                 Slug = normalizedSlug,
-                Description = NormalizeOptionalText(request.Description),
-                IconName = NormalizeOptionalText(request.IconName),
+                Description = TextNormalizer.Optional(request.Description),
+                IconName = TextNormalizer.Optional(request.IconName),
                 IsActive = request.IsActive,
                 CreatedAt = DateTime.UtcNow
             };
@@ -83,8 +84,8 @@ namespace DorisApp2.API.Services
                 return ServiceResult<CategoryResponse>.NotFound("Category was not found.");
             }
 
-            var normalizedName = NormalizeRequiredText(request.Name);
-            var normalizedSlug = NormalizeSlug(request.Slug);
+            var normalizedName = TextNormalizer.Required(request.Name);
+            var normalizedSlug = TextNormalizer.Slug(request.Slug);
 
             if (normalizedName is null || normalizedSlug is null)
             {
@@ -101,8 +102,8 @@ namespace DorisApp2.API.Services
 
             category.Name = normalizedName;
             category.Slug = normalizedSlug;
-            category.Description = NormalizeOptionalText(request.Description);
-            category.IconName = NormalizeOptionalText(request.IconName);
+            category.Description = TextNormalizer.Optional(request.Description);
+            category.IconName = TextNormalizer.Optional(request.IconName);
             category.IsActive = request.IsActive;
             category.UpdatedAt = DateTime.UtcNow;
 
@@ -142,8 +143,8 @@ namespace DorisApp2.API.Services
                 return ServiceResult<SubCategoryResponse>.NotFound("Category was not found.");
             }
 
-            var normalizedName = NormalizeRequiredText(request.Name);
-            var normalizedSlug = NormalizeSlug(request.Slug);
+            var normalizedName = TextNormalizer.Required(request.Name);
+            var normalizedSlug = TextNormalizer.Slug(request.Slug);
 
             if (normalizedName is null || normalizedSlug is null)
             {
@@ -163,7 +164,7 @@ namespace DorisApp2.API.Services
                 CategoryId = categoryId,
                 Name = normalizedName,
                 Slug = normalizedSlug,
-                Description = NormalizeOptionalText(request.Description),
+                Description = TextNormalizer.Optional(request.Description),
                 IsActive = request.IsActive,
                 CreatedAt = DateTime.UtcNow
             };
@@ -189,8 +190,8 @@ namespace DorisApp2.API.Services
                 return ServiceResult<SubCategoryResponse>.NotFound("Subcategory was not found.");
             }
 
-            var normalizedName = NormalizeRequiredText(request.Name);
-            var normalizedSlug = NormalizeSlug(request.Slug);
+            var normalizedName = TextNormalizer.Required(request.Name);
+            var normalizedSlug = TextNormalizer.Slug(request.Slug);
 
             if (normalizedName is null || normalizedSlug is null)
             {
@@ -209,7 +210,7 @@ namespace DorisApp2.API.Services
 
             subCategory.Name = normalizedName;
             subCategory.Slug = normalizedSlug;
-            subCategory.Description = NormalizeOptionalText(request.Description);
+            subCategory.Description = TextNormalizer.Optional(request.Description);
             subCategory.IsActive = request.IsActive;
             subCategory.UpdatedAt = DateTime.UtcNow;
 
@@ -267,82 +268,5 @@ namespace DorisApp2.API.Services
             };
         }
 
-        private static string? NormalizeSlug(string? slug)
-        {
-            var normalizedSlug = slug?.Trim().ToLowerInvariant();
-            return string.IsNullOrWhiteSpace(normalizedSlug) ? null : normalizedSlug;
-        }
-
-        private static string? NormalizeRequiredText(string? value)
-        {
-            var trimmed = value?.Trim();
-            return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
-        }
-
-        private static string? NormalizeOptionalText(string? value)
-        {
-            var trimmed = value?.Trim();
-            return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
-        }
-    }
-
-    public class ServiceResult
-    {
-        public bool Succeeded { get; init; }
-        public ServiceError Error { get; init; }
-        public string? Message { get; init; }
-
-        public static ServiceResult Ok()
-        {
-            return new ServiceResult { Succeeded = true };
-        }
-
-        public static ServiceResult NotFound(string message)
-        {
-            return new ServiceResult { Error = ServiceError.NotFound, Message = message };
-        }
-
-        public static ServiceResult Conflict(string message)
-        {
-            return new ServiceResult { Error = ServiceError.Conflict, Message = message };
-        }
-
-        public static ServiceResult BadRequest(string message)
-        {
-            return new ServiceResult { Error = ServiceError.BadRequest, Message = message };
-        }
-    }
-
-    public class ServiceResult<T> : ServiceResult
-    {
-        public T? Value { get; init; }
-
-        public static ServiceResult<T> Ok(T value)
-        {
-            return new ServiceResult<T> { Succeeded = true, Value = value };
-        }
-
-        public new static ServiceResult<T> NotFound(string message)
-        {
-            return new ServiceResult<T> { Error = ServiceError.NotFound, Message = message };
-        }
-
-        public new static ServiceResult<T> Conflict(string message)
-        {
-            return new ServiceResult<T> { Error = ServiceError.Conflict, Message = message };
-        }
-
-        public new static ServiceResult<T> BadRequest(string message)
-        {
-            return new ServiceResult<T> { Error = ServiceError.BadRequest, Message = message };
-        }
-    }
-
-    public enum ServiceError
-    {
-        None,
-        BadRequest,
-        NotFound,
-        Conflict
     }
 }

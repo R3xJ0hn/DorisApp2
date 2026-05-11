@@ -286,7 +286,7 @@ function ShopNavbar() {
               : "pointer-events-none grid-rows-[0fr] -translate-y-2 border-t border-transparent opacity-0 h-0",
           )}
           aria-hidden={!mobileMenuOpen}
-          inert={!mobileMenuOpen ? true : undefined}
+          inert={!mobileMenuOpen}
         >
           <div className="min-h-0 px-5 py-5">
             <NavLinks

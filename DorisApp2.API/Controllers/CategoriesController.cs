@@ -72,6 +72,22 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return NoContent();
     }
 
+    [HttpGet("{categoryId:int}/subcategories/{subCategoryId:int}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<SubCategoryResponse>> GetSubcategory(int categoryId, int subCategoryId)
+    {
+        var category = await categoryService.GetCategoryAsync(categoryId);
+        var subCategory = category?.SubCategories
+            .FirstOrDefault(subCategory => subCategory.Id == subCategoryId);
+
+        if (subCategory is null)
+        {
+            return NotFound(new { message = "Subcategory was not found." });
+        }
+
+        return Ok(subCategory);
+    }
+
     [HttpPost("{categoryId:int}/subcategories")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<SubCategoryResponse>> CreateSubCategory(
@@ -85,7 +101,10 @@ public class CategoriesController(ICategoryService categoryService) : Controller
             return ToErrorResult(result);
         }
 
-        return CreatedAtAction(nameof(GetCategory), new { id = categoryId }, result.Value);
+        return CreatedAtAction(
+            nameof(GetSubcategory),
+            new { categoryId, subCategoryId = result.Value!.Id },
+            result.Value);
     }
 
     [HttpPut("{categoryId:int}/subcategories/{subCategoryId:int}")]
@@ -119,7 +138,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return NoContent();
     }
 
-    private ActionResult ToErrorResult(ServiceResult result)
+    private ActionResult ToErrorResult(IServiceResult result)
     {
         return result.Error switch
         {
