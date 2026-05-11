@@ -119,11 +119,23 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("SeedCategories"))
+var shouldSeedCategories = app.Environment.IsDevelopment()
+    || app.Configuration.GetValue<bool>("SeedCategories")
+    || app.Configuration.GetValue<bool>("SeedProducts");
+var shouldSeedProducts = app.Environment.IsDevelopment()
+    || app.Configuration.GetValue<bool>("SeedProducts");
+
+if (shouldSeedCategories)
 {
     // The seeder is idempotent; production seeding should use migrations
     // or deployment scripts unless SeedCategories is explicitly enabled.
     await app.Services.SeedCategoriesAsync();
+}
+
+if (shouldSeedProducts)
+{
+    // Products depend on category and subcategory slugs created by the category seeder.
+    await app.Services.SeedProductsAsync();
 }
 
 app.UseHttpsRedirection();
