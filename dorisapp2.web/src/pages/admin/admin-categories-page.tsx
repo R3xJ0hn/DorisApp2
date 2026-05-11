@@ -79,6 +79,10 @@ function AdminCategoriesPage() {
         toast.error("Category update failed", { description: getCategoryErrorMessage(error) });
     };
 
+    const showCategoryValidationError = (description: string) => {
+        toast.error("Category update failed", { description });
+    };
+
     const runCategoryMutation = async (
         loadingMessage: string,
         successMessage: string,
@@ -149,12 +153,31 @@ function AdminCategoriesPage() {
         openCategoryDetails(draftCategory, true);
     };
 
+    const handleToggleEditing = () => {
+        if (!selectedCategory) return;
+
+        setIsEditing((editing) => {
+            if (editing) {
+                setDraft(toDraft(selectedCategory));
+            }
+
+            return !editing;
+        });
+    };
+
     const handleSaveDraft = async () => {
         if (!selectedCategory) return;
 
+        const validatedDraft = validateCategoryDraft(draft, selectedCategory, categories);
+
+        if (!validatedDraft.succeeded) {
+            showCategoryValidationError(validatedDraft.message);
+            return;
+        }
+
         await runCategoryMutation("Saving category changes...", "Category saved.", async () => {
             if (isNewCategoryDraft) {
-                const createdCategory = await createCategory({ ...draft, iconName: draft.iconName, isActive: selectedCategory.isActive });
+                const createdCategory = await createCategory({ ...validatedDraft.value, isActive: selectedCategory.isActive });
                 await Promise.all(selectedCategory.subcategories.map((subcategory) =>
                     createSubCategory(createdCategory.id, {
                         name: subcategory.name,
@@ -165,7 +188,7 @@ function AdminCategoriesPage() {
                 ));
                 await refreshCategories(String(createdCategory.id));
             } else {
-                await updateCategory(Number(selectedCategory.id), { ...draft, iconName: draft.iconName, isActive: selectedCategory.isActive });
+                await updateCategory(Number(selectedCategory.id), { ...validatedDraft.value, isActive: selectedCategory.isActive });
                 await refreshCategories(selectedCategory.id);
             }
         });
@@ -327,13 +350,13 @@ function AdminCategoriesPage() {
                                     selectedIconName={selectedIconName}
                                     setDraft={setDraft}
                                     setIconQuery={setIconQuery}
-                                    setIsEditing={setIsEditing}
                                     setNewSubcategory={setNewSubcategory}
                                     onAddSubcategory={handleAddSubcategory}
                                     onBack={() => setMobilePanel("list")}
                                     onDelete={handleDeleteCategory}
                                     onRemoveSubcategory={handleRemoveSubcategory}
                                     onSave={handleSaveDraft}
+                                    onToggleEditing={handleToggleEditing}
                                     onToggleActive={handleToggleCategoryActive}
                                 />
                             ) : (
@@ -445,13 +468,13 @@ function CategoryPanel(props: {
     selectedIconName: IconName;
     setDraft: SetDraft;
     setIconQuery: (query: string) => void;
-    setIsEditing: Dispatch<SetStateAction<boolean>>;
     setNewSubcategory: (name: string) => void;
     onAddSubcategory: () => void;
     onBack: () => void;
     onDelete: () => void;
     onRemoveSubcategory: (id: string) => void;
     onSave: () => void;
+    onToggleEditing: () => void;
     onToggleActive: () => void;
 }) {
     const { category, isEditing } = props;
@@ -503,7 +526,7 @@ function CategoryPanelHeader({
     isEditing,
     isSaving,
     selectedIconName,
-    setIsEditing,
+    onToggleEditing,
     onToggleActive,
     onBack,
 }: {
@@ -512,7 +535,7 @@ function CategoryPanelHeader({
     isEditing: boolean;
     isSaving: boolean;
     selectedIconName: IconName;
-    setIsEditing: Dispatch<SetStateAction<boolean>>;
+    onToggleEditing: () => void;
     onToggleActive: () => void;
     onBack?: () => void;
 }) {
@@ -530,7 +553,7 @@ function CategoryPanelHeader({
                 </span>
                 <div>
                     <h3 className="font-medium">{category.name}</h3>
-                    <p className="text-xs text-muted-foreground">/categories/{draft.slug}</p>
+                    <p className="text-xs text-muted-foreground">/categories/{isEditing ? draft.slug : category.slug}</p>
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span>{category.itemCount} products</span>
                         <span>{category.subcategories.length} subcategories</span>
@@ -539,7 +562,7 @@ function CategoryPanelHeader({
             </div>
             <div className="flex items-center gap-2">
                 <ActiveSwitch isActive={category.isActive} isSaving={isSaving} onClick={onToggleActive} />
-                <Button type="button" variant={isEditing ? "secondary" : "outline"} size="sm" className="gap-2" disabled={isSaving} onClick={() => setIsEditing((editing) => !editing)}>
+                <Button type="button" variant={isEditing ? "secondary" : "outline"} size="sm" className="gap-2" disabled={isSaving} onClick={onToggleEditing}>
                     <Pencil className="size-4" />
                     {isEditing ? "Editing" : "Edit"}
                 </Button>
@@ -748,6 +771,40 @@ function toDraft(category: ShopCategory): Draft {
     return { name: category.name, slug: category.slug, description: category.description, iconName: category.iconName };
 }
 
+function validateCategoryDraft(draft: Draft, selectedCategory: ShopCategory, categories: ShopCategory[]) {
+    const name = draft.name.trim();
+    const rawSlug = draft.slug.trim();
+
+    if (!name) {
+        return { succeeded: false as const, message: "Category name is required." };
+    }
+
+    if (!rawSlug) {
+        return { succeeded: false as const, message: "Category URL slug is required." };
+    }
+
+    const baseSlug = toSlug(rawSlug);
+
+    if (!baseSlug) {
+        return { succeeded: false as const, message: "Category URL slug must include at least one letter or number." };
+    }
+
+    const existingSlugs = categories.flatMap((category) => [
+        ...(category.id === selectedCategory.id ? [] : [category.slug]),
+        ...category.subcategories.map((subcategory) => subcategory.slug),
+    ]);
+
+    return {
+        succeeded: true as const,
+        value: {
+            name,
+            slug: getUniqueSlug(baseSlug, existingSlugs),
+            description: draft.description,
+            iconName: draft.iconName,
+        },
+    };
+}
+
 function createLocalCategoryDraft(categories: ShopCategory[]): ShopCategory {
     const existingSlugs = categories.filter((category) => category.id !== newCategoryDraftId).map((category) => category.slug);
 
@@ -828,11 +885,11 @@ function toShopCategories(apiCategories: ApiCategory[]): ShopCategory[] {
 }
 
 function getUniqueSlug(baseSlug: string, existingSlugs: string[]) {
-    const usedSlugs = new Set(existingSlugs);
+    const usedSlugs = new Set(existingSlugs.map((slug) => slug.toLowerCase()));
     let slug = baseSlug;
-    let index = 2;
+    let index = 1;
 
-    while (usedSlugs.has(slug)) {
+    while (usedSlugs.has(slug.toLowerCase())) {
         slug = `${baseSlug}-${index}`;
         index += 1;
     }

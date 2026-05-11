@@ -34,13 +34,21 @@ namespace DorisApp2.API.Data
                     continue;
                 }
 
-                var subCategory = seedProduct.SubCategorySlug is null
+                var subCategory = string.IsNullOrWhiteSpace(seedProduct.SubCategorySlug)
                     ? null
                     : category.SubCategories.FirstOrDefault(subCategory =>
                         string.Equals(
                             subCategory.Slug,
                             seedProduct.SubCategorySlug,
                             StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrWhiteSpace(seedProduct.SubCategorySlug) && subCategory is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Product seed '{seedProduct.Slug}' references subcategory slug " +
+                        $"'{seedProduct.SubCategorySlug}' under category '{category.Slug}' (ID {category.Id}), " +
+                        "but no matching subcategory exists.");
+                }
 
                 context.Products.Add(new Product
                 {
@@ -54,6 +62,7 @@ namespace DorisApp2.API.Data
                     IsActive = seedProduct.IsActive,
                     CreatedAt = createdAt
                 });
+                existingProductSlugs.Add(seedProduct.Slug);
                 hasChanges = true;
             }
 

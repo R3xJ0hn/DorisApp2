@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DorisApp2.API.Utilities;
 
 namespace DorisApp2.API.Dtos
 {
@@ -41,6 +42,7 @@ namespace DorisApp2.API.Dtos
         public string? Description { get; set; }
 
         [MaxLength(100)]
+        [LucideIconName]
         public string? IconName { get; set; }
 
         public bool IsActive { get; set; } = true;
